@@ -16,14 +16,14 @@ import { bigNumbersDiff } from 'utils/bigNumbersDiff'
 import { deepEqFundingCycles } from 'utils/deepEqFundingCycles'
 import { normalizeHandle } from 'utils/formatHandle'
 
+import Loading from 'components/shared/Loading'
+import Project from 'components/Dashboard/Project'
+import { useProjectsQuery } from 'hooks/Projects'
+
 import { padding } from 'constants/styles/padding'
 import { layouts } from 'constants/styles/layouts'
 import { projectTypes } from 'constants/project-types'
 import { archivedProjectIds } from 'constants/archived-projects'
-
-import Loading from '../shared/Loading'
-import Project from './Project'
-import { useProjectsQuery } from '../../hooks/Projects'
 
 export default function Dashboard() {
   const [projectExists, setProjectExists] = useState<boolean>()

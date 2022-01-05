@@ -17,11 +17,11 @@ msgstr ""
 msgid "5% of all money made by projects is sent to help pay for the maintenance and development of Juicebox itself. In exchange, projects get Juicebox tokens ($JBX), which will be worth more as the ecosystem grows over time."
 msgstr ""
 
-#: src/components/Projects/index.tsx
+#: src/pages/Projects/index.tsx
 msgid "<0/> Archived projects have not been modified or deleted on the blockchain, and can still be interacted with directly through the Juicebox contracts."
 msgstr ""
 
-#: src/components/Projects/index.tsx
+#: src/pages/Projects/index.tsx
 msgid "<0/>The Juicebox protocol is open to anyone, and project configurations can vary widely. There are risks associated with interacting with all projects on the protocol. Projects built on the protocol are not endorsed or vetted by JuiceboxDAO, so you should do your own research and understand the risks before committing your funds."
 msgstr ""
 
@@ -41,7 +41,7 @@ msgstr ""
 msgid "A project owner can propose changes to any part of the contract at any time, with changes taking effect after the current budgeting time frame has ended."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Almost definitely."
 msgstr ""
 
@@ -53,7 +53,7 @@ msgstr ""
 msgid "At the start, power over the governance smart contract is held by Juicebox's founding contributors. The intent is to soon transfer the power to a community of token holders."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Big ups to the Ethereum community for crafting the infrastructure and economy to make Juicebox possible."
 msgstr ""
 
@@ -61,11 +61,11 @@ msgstr ""
 msgid "Blog"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Build a community around a project, fund it, and program its spending. Light enough for a group of friends, powerful enough for a global network of anons."
 msgstr "围绕一个项目建立一个社区，为其提供资金，并对其支出进行规划。既能简单易用让一群知己好友轻松创建属于自己的社区项目，也可以强大到能够支持一个全球匿名网络的运作"
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Built for:"
 msgstr "服务的对象:"
 
@@ -77,15 +77,15 @@ msgstr ""
 msgid "Can I delete a project?"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Changes to your project's funding require a community approval period to take effect. Your supporters don't have to trust you—even though they already do."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Commit portions of your revenue to go to the people or projects you want to support, or the contributors you want to pay. When you get paid, so do they."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Community funding for people and projects"
 msgstr "为个人和项目提供社区资助"
 
@@ -97,7 +97,7 @@ msgstr ""
 msgid "Creating a Juicebox project mints you an NFT (ERC-721) representing ownership over it. Whoever owns this NFT can configure the rules of the game and how payouts are distributed."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Design your project"
 msgstr "设计你的项目"
 
@@ -117,11 +117,11 @@ msgstr ""
 msgid "Due to their public nature, any exploits to the contracts may have irreversable consequences, including loss of funds. Please use Juicebox with caution."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "ERC20 community tokens"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Ethereum protocols and DAOs"
 msgstr "以太坊协议和 DAO"
 
@@ -133,7 +133,7 @@ msgstr ""
 msgid "FAQ"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "FAQs"
 msgstr ""
 
@@ -157,7 +157,7 @@ msgstr ""
 msgid "How decentralized is Juicebox?"
 msgstr ""
 
-#: src/components/Projects/index.tsx
+#: src/pages/Projects/index.tsx
 msgid "How do I archive a project?"
 msgstr ""
 
@@ -165,7 +165,7 @@ msgstr ""
 msgid "How have the contracts been tested?"
 msgstr ""
 
-#: src/components/Projects/index.tsx
+#: src/pages/Projects/index.tsx
 msgid "If you have a project you'd like to archive, let the Juicebox team know in Discord."
 msgstr ""
 
@@ -173,7 +173,7 @@ msgstr ""
 msgid "If you know how much your project needs to earn over some period of time to be sustainable, you can set a funding target with that amount. If your project earns more than that, the surplus funds are locked in an overflow pool. Anyone holding your project's tokens can claim a portion of the overflow pool in exchange for burning their tokens."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Indie artists, devs, creators"
 msgstr "独立艺术家，开发者，创作者"
 
@@ -197,7 +197,7 @@ msgstr ""
 msgid "Juicebox was built to allow people and projects to get paid for creating public art and infrastructure, as much as or more than they would working towards corporate ends. No more shady business."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Latest payments"
 msgstr ""
 
@@ -205,11 +205,11 @@ msgstr ""
 msgid "Loading {exchangeName} price for {tokenSymbol}..."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Note: Juicebox is new, unaudited, and not guaranteed to work perfectly. Before spending money, do your own research: <0>ask questions</0>, <1>check out the code</1>, and understand the risks!"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Open source businesses"
 msgstr "开源业务"
 
@@ -217,11 +217,11 @@ msgstr "开源业务"
 msgid "People using Juicebox are interacting with each other through public infrastructure—not a private, profit-seeking corporate service that brokers the exchange."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Powered by public smart contracts on <0>Ethereum</0>."
 msgstr "由<0>以太坊</0>公共智能合约提供支持。"
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Programmable spending"
 msgstr ""
 
@@ -233,19 +233,19 @@ msgstr ""
 msgid "Projects can be created with an optional discount rate to incentivize funding it earlier than later. The amount of tokens rewarded per amount paid to your project will decrease by the discount rate with each new funding cycle. A higher discount rate will incentivize supporters to pay your project earlier than later."
 msgstr ""
 
-#: src/components/Projects/index.tsx
+#: src/pages/Projects/index.tsx
 msgid "Projects on Juicebox"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Projects using Juicebox"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Public goods and services"
 msgstr "公共产品和服务"
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Redistributable surplus"
 msgstr ""
 
@@ -253,11 +253,11 @@ msgstr ""
 msgid "Remove {0} ERC20 tokens from your wallet and lock them in the Juicebox protocol."
 msgstr "从你的钱包中扣除 {0} ERC20 代币，并把这些代币锁在Juicebox协议中"
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Set a funding target to cover predictable expenses. Any extra revenue can be claimed by anyone holding your project's tokens alongside you."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Should you Juicebox?"
 msgstr ""
 
@@ -269,7 +269,7 @@ msgstr ""
 msgid "That's the plan, but the core Juicebox contracts will first be deployed to Ethereum Mainnet."
 msgstr ""
 
-#: src/components/Create/index.tsx
+#: src/pages/Create/index.tsx
 msgid "The JBX protocol is unaudited, and projects built on it may be vulnerable to bugs or exploits. Be smart!"
 msgstr ""
 
@@ -281,7 +281,7 @@ msgstr ""
 msgid "The founding contributors will then be working on L2 payment terminals for Juicebox projects."
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "The future will be led by creators, and owned by communities."
 msgstr ""
 
@@ -309,7 +309,7 @@ msgstr ""
 msgid "This website (juicebox.money) connects to the Juicebox protocol's smart contracts, deployed on the Ethereum network. (note: anyone else can make a website that also connects to these same smart contracts. For now, don't trust any site other than this one to access the Juicebox protocol.)"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "Transparency & accountability"
 msgstr ""
 
@@ -345,7 +345,7 @@ msgstr ""
 msgid "What's going on under the hood?"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "When someone pays your project either as a patron or a user of your app, they earn a proportional amount of your project's token. When you win, your token holders win, so they'll want you to win even more."
 msgstr ""
 
@@ -365,7 +365,7 @@ msgstr ""
 msgid "Will it work on L2s?"
 msgstr ""
 
-#: src/components/Landing/index.tsx
+#: src/pages/Landing/index.tsx
 msgid "With Juicebox, projects are built and maintained by motivated punks getting paid transparently, and funded by a community of users and patrons who are rewarded as the projects they support succeed."
 msgstr ""
 

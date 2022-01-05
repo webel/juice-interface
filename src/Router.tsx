@@ -1,10 +1,14 @@
-import Dashboard from 'components/Dashboard'
-import Landing from 'components/Landing'
 import { HashRouter, Route, Switch } from 'react-router-dom'
+import { Redirect, useParams } from 'react-router'
+import Dashboard from 'pages/Dashboard'
+import Landing from 'pages/Landing'
+import Create from 'pages/Create'
+import Projects from 'pages/Projects'
 
-import CatchallRedirect from './CatchallRedirect'
-import Create from './Create'
-import Projects from './Projects'
+function CatchallRedirect() {
+  const route = useParams<{ route: string }>()['route']
+  return <Redirect to={'/p/' + route} />
+}
 
 export default function Router() {
   return (

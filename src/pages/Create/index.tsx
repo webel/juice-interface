@@ -39,13 +39,15 @@ import {
 } from 'utils/ipfs'
 import { feeForAmount } from 'utils/math'
 
-import BudgetForm from './BudgetForm'
-import ConfirmDeployProject from './ConfirmDeployProject'
-import IncentivesForm from './IncentivesForm'
-import PayModsForm from './PayModsForm'
-import ProjectForm, { ProjectFormFields } from './ProjectForm'
-import RulesForm from './RulesForm'
-import TicketingForm, { TicketingFormFields } from './TicketingForm'
+import BudgetForm from 'components/Create/BudgetForm'
+import ConfirmDeployProject from 'components/Create/ConfirmDeployProject'
+import IncentivesForm from 'components/Create/IncentivesForm'
+import PayModsForm from 'components/Create/PayModsForm'
+import ProjectForm, { ProjectFormFields } from 'components/Create/ProjectForm'
+import RulesForm from 'components/Create/RulesForm'
+import TicketingForm, {
+  TicketingFormFields,
+} from 'components/Create/TicketingForm'
 
 export default function Create() {
   const { transactor, contracts, adminFeePercent } = useContext(UserContext)
