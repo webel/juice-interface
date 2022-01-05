@@ -74,7 +74,7 @@ const queryOpts = (
       ...(opts.projectId
         ? [
             {
-              key: 'id',
+              key: 'id' as const,
               value: opts.projectId.toString(),
             },
           ]
@@ -82,7 +82,7 @@ const queryOpts = (
       ...(terminalAddress
         ? [
             {
-              key: 'terminal',
+              key: 'terminal' as const,
               value: terminalAddress,
             },
           ]
