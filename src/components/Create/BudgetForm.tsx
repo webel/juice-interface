@@ -8,9 +8,9 @@ import { useAppDispatch } from 'hooks/AppDispatch'
 import { useEditingFundingCycleSelector } from 'hooks/AppSelector'
 import { useTerminalFee } from 'hooks/TerminalFee'
 import { CurrencyOption } from 'models/currency-option'
-import { useContext, useLayoutEffect, useState, useMemo } from 'react'
+import { useContext, useLayoutEffect, useMemo, useState } from 'react'
 import { editingProjectActions } from 'redux/slices/editingProject'
-import { fromWad } from 'utils/formatNumber'
+import { fromWad, parseWad } from 'utils/formatNumber'
 import { hasFundingTarget, isRecurring } from 'utils/fundingCycle'
 import { helpPagePath } from 'utils/helpPageHelper'
 
@@ -33,10 +33,10 @@ export default function BudgetForm({
   const [target, setTarget] = useState<string>('0')
   const [duration, setDuration] = useState<string>('0')
   const [showFundingFields, setShowFundingFields] = useState<boolean>()
-  const editingFC = useEditingFundingCycleSelector()
   // TODO budgetForm should not depend on dispatch
   const dispatch = useAppDispatch()
   const { terminal } = useContext(ProjectContext)
+  const editingFC = useEditingFundingCycleSelector()
   const { contracts } = useContext(UserContext)
 
   const terminalFee = useTerminalFee(terminal?.version, contracts)
@@ -45,8 +45,12 @@ export default function BudgetForm({
     setCurrency(initialCurrency)
     setTarget(initialTarget)
     setDuration(initialDuration)
-    setShowFundingFields(hasFundingTarget(editingFC))
-  }, [editingFC, initialCurrency, initialDuration, initialTarget])
+    setShowFundingFields(
+      hasFundingTarget({
+        target: parseWad(initialTarget),
+      }),
+    )
+  }, [initialCurrency, initialDuration, initialTarget])
 
   const maxIntStr = fromWad(constants.MaxUint256)
   const hasTarget = useMemo(() => {
