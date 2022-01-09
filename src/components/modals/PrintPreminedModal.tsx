@@ -6,7 +6,7 @@ import { ProjectContext } from 'contexts/projectContext'
 import { UserContext } from 'contexts/userContext'
 import { constants, Contract, utils } from 'ethers'
 import { CurrencyOption } from 'models/currency-option'
-import { useContext, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import { parseWad } from 'utils/formatNumber'
 
 export default function PrintPreminedModal({
@@ -77,6 +77,26 @@ export default function PrintPreminedModal({
     })
   }
 
+  const projectTargetFormItemProps:
+    | { label: string; extra: string }
+    | undefined = useMemo(() => {
+    if (!terminal?.version) return
+
+    switch (terminal.version) {
+      case '1':
+        return {
+          label: 'Payment equivalent',
+          extra:
+            'The amount of tokens minted to the receiver will be calculated based on if they had paid this amount to the project in the current funding cycle.',
+        }
+      case '1.1':
+        return {
+          label: 'Token amount',
+          extra: 'The amount of tokens to mint to the receiver.',
+        }
+    }
+  }, [terminal?.version])
+
   const erc20Issued =
     tokenSymbol && tokenAddress && tokenAddress !== constants.AddressZero
 
@@ -111,11 +131,7 @@ export default function PrintPreminedModal({
           <Input placeholder={constants.AddressZero} />
         </Form.Item>
         <FormItems.ProjectTarget
-          formItemProps={{
-            label: 'Payment equivalent',
-            extra:
-              'The amount of tokens minted to the receiver will be calculated based on if they had paid this amount to the project in the current funding cycle.',
-          }}
+          formItemProps={projectTargetFormItemProps}
           currency={currency}
           onCurrencyChange={setCurrency}
           value={value}
