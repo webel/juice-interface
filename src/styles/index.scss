@@ -38,6 +38,7 @@ label {
 
 a {
   color: var(--text-action-primary);
+  font-weight: 500;
 
   &:hover {
     color: var(--text-action-highlight);
@@ -125,7 +126,7 @@ button {
 }
 
 body, .top-nav, div {
-  transition: background-color 750ms;
+  transition: background-color 250ms linear;
 }
 
 @import 'antd-overrides/index.scss';

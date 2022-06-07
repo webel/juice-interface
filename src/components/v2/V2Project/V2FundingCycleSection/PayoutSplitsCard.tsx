@@ -15,6 +15,7 @@ import { formatFee, MAX_DISTRIBUTION_LIMIT } from 'utils/v2/math'
 import { useETHPaymentTerminalFee } from 'hooks/v2/contractReader/ETHPaymentTerminalFee'
 import { Split } from 'models/v2/splits'
 import { BigNumber } from '@ethersproject/bignumber'
+import { detailedTimeString } from 'utils/formatTime'
 
 import DistributePayoutsModal from './modals/DistributePayoutsModal'
 
@@ -23,11 +24,13 @@ export default function PayoutSplitsCard({
   payoutSplits,
   distributionLimitCurrency,
   distributionLimit,
+  fundingCycleDuration,
 }: {
   hideDistributeButton?: boolean
   payoutSplits: Split[] | undefined
   distributionLimitCurrency: BigNumber | undefined
   distributionLimit: BigNumber | undefined
+  fundingCycleDuration: BigNumber | undefined
 }) {
   const {
     usedDistributionLimit,
@@ -47,11 +50,24 @@ export default function PayoutSplitsCard({
     loading.balanceInDistributionLimitCurrencyLoading ||
     loading.usedDistributionLimitLoading
 
+  const formattedDuration = detailedTimeString({
+    timeSeconds: fundingCycleDuration?.toNumber(),
+    fullWords: true,
+  })
+  const hasDuration = fundingCycleDuration?.gt(0)
+
   return (
     <CardSection>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {hideDistributeButton ? null : (
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 10,
+              flexWrap: 'wrap',
+            }}
+          >
             <Skeleton
               loading={isLoadingStats}
               active
@@ -90,12 +106,14 @@ export default function PayoutSplitsCard({
           <TooltipLabel
             label={
               <h4 style={{ display: 'inline-block' }}>
-                <Trans>Distribution splits</Trans>
+                <Trans>Funding distribution</Trans>
               </h4>
             }
             tip={
               <Trans>
-                Available funds are distributed according to the payouts below.
+                Available funds can be distributed according to the payouts
+                below
+                {hasDuration ? ` every ${formattedDuration}` : null}.
               </Trans>
             }
           />

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { CV } from 'models/cv'
 import {
   DistributeToPayoutModEvent,
   DistributeToPayoutModEventJson,
@@ -176,8 +177,9 @@ export type WhereConfig<E extends EntityKey> = {
     | 'not_ends_with'
 }
 
-export type BlockConfig = {
+type BlockConfig = {
   number?: number
+  number_gte?: number
   hash?: string
 }
 
@@ -236,9 +238,9 @@ export const formatGraphQuery = <E extends EntityKey, K extends EntityKeys<E>>(
       ? `[${where.value
           .map(v => (typeof v === 'string' ? `"${v}"` : v))
           .join(',')}]`
-      : typeof where.value === 'number'
-      ? where.value
-      : `"${where.value}"`)
+      : typeof where.value === 'string'
+      ? `"${where.value}"`
+      : where.value)
 
   addArg('text', opts.text ? `"${opts.text}"` : undefined)
   addArg('first', opts.first)
@@ -250,6 +252,8 @@ export const formatGraphQuery = <E extends EntityKey, K extends EntityKeys<E>>(
       addArg('block', `{ number: ${opts.block.number} }`)
     } else if (opts.block.hash) {
       addArg('block', `{ hash: ${opts.block.hash} }`)
+    } else if (opts.block.number_gte) {
+      addArg('block', `{ number_gte: ${opts.block.number_gte} }`)
     }
   }
   addArg(
@@ -261,7 +265,7 @@ export const formatGraphQuery = <E extends EntityKey, K extends EntityKeys<E>>(
       : undefined,
   )
 
-  let overrideEntity: string = opts.entity
+  const overrideEntity: string = opts.entity
 
   return `{ ${overrideEntity}${isPluralQuery(opts.entity) ? 's' : ''}${
     args ? `(${args})` : ''
@@ -277,8 +281,6 @@ export const formatGraphQuery = <E extends EntityKey, K extends EntityKeys<E>>(
 }
 
 const subgraphUrl = process.env.REACT_APP_SUBGRAPH_URL
-
-export const trimHexZero = (hexStr: string) => hexStr.replace('0x0', '0x')
 
 export function formatGraphResponse<E extends EntityKey>(
   entity: E,
@@ -505,4 +507,16 @@ const isPluralQuery = (key: EntityKey): boolean => {
   if (key === 'projectSearch') return false
 
   return true
+}
+
+/**
+ * Get the subgraph representation of a project ID, based on given [cv] and [projectId]
+ *
+ * Reference implementation: https://github.com/jbx-protocol/juice-subgraph/blob/main/src/utils.ts#L84
+ *
+ * @param cv Contracts version
+ * @param projectId the on-chain project ID
+ */
+export const getSubgraphIdForProject = (cv: CV, projectId: number) => {
+  return `${cv}-${projectId}`
 }

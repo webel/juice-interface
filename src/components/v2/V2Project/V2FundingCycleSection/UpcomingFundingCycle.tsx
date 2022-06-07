@@ -69,6 +69,7 @@ export default function UpcomingFundingCycle({
           fundingCycleDetails={
             <FundingCycleDetails
               fundingCycle={queuedFundingCycle}
+              fundingCycleMetadata={queuedFundingCycleMetadata}
               distributionLimit={queuedDistributionLimit}
               distributionLimitCurrency={queuedDistributionLimitCurrency}
             />
@@ -85,6 +86,7 @@ export default function UpcomingFundingCycle({
         payoutSplits={queuedPayoutSplits}
         distributionLimitCurrency={queuedDistributionLimitCurrency}
         distributionLimit={queuedDistributionLimit}
+        fundingCycleDuration={queuedFundingCycle.duration}
         hideDistributeButton
       />
       <ReservedTokensSplitsCard

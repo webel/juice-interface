@@ -49,9 +49,12 @@ export default function ProjectPreview({
   const project: V2ProjectContextType = {
     isPreviewMode: true,
     cv: '2',
+    isArchived: false,
 
     projectId: 0,
     projectMetadata,
+
+    createdAt: undefined,
 
     fundingCycle,
     fundingCycleMetadata,
@@ -67,6 +70,7 @@ export default function ProjectPreview({
 
     usedDistributionLimit: BigNumber.from(0),
     ETHBalance: BigNumber.from(0),
+    totalVolume: BigNumber.from(0),
     balanceInDistributionLimitCurrency: BigNumber.from(0),
 
     tokenAddress: undefined,

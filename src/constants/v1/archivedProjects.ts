@@ -11,9 +11,11 @@ const {
   SANTA_DAO,
   INFLATIONLESS_DAO,
   VOTING_DAO,
+  LUNAR_DAO,
+  BLUECOLLARDS,
 } = V1_PROJECT_IDS
 
-const archivedProjectIdsByNetwork: Partial<Record<NetworkName, number[]>> = {
+const V1ArchivedProjectIdsByNetwork: Partial<Record<NetworkName, number[]>> = {
   [NetworkName.mainnet]: [
     PX_DAO,
     SVSPOOL002,
@@ -22,9 +24,11 @@ const archivedProjectIdsByNetwork: Partial<Record<NetworkName, number[]>> = {
     SANTA_DAO,
     INFLATIONLESS_DAO,
     VOTING_DAO,
+    LUNAR_DAO,
+    BLUECOLLARDS,
   ],
   [NetworkName.rinkeby]: [],
 }
 
-export const archivedProjectIds =
-  archivedProjectIdsByNetwork[readNetwork.name] ?? []
+export const V1ArchivedProjectIds =
+  V1ArchivedProjectIdsByNetwork[readNetwork.name] ?? []

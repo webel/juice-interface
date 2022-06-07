@@ -14,7 +14,9 @@ import {
   uploadProjectMetadata,
 } from 'utils/ipfs'
 
-export type ProjectInfoFormFields = {
+import { PROJECT_PAY_CHARACTER_LIMIT } from 'constants/numbers'
+
+type ProjectInfoFormFields = {
   name: string
   description: string
   infoUri: string
@@ -26,7 +28,7 @@ export type ProjectInfoFormFields = {
   version: number
 }
 
-export type HandleFormFields = {
+type HandleFormFields = {
   handle: string
 }
 
@@ -84,7 +86,7 @@ export default function EditProjectModal({
         infoUri: fields.infoUri,
         twitter: fields.twitter,
         discord: fields.discord,
-        payButton: fields.payButton,
+        payButton: fields.payButton.substring(0, PROJECT_PAY_CHARACTER_LIMIT), // Enforce limit
         payDisclosure: fields.payDisclosure,
         tokens: metadata?.tokens ?? [],
       },

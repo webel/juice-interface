@@ -1,9 +1,10 @@
 import { ThemeContext } from 'contexts/themeContext'
 import { useContext } from 'react'
 import { CSSProperties } from 'react'
+import { Button } from 'antd'
+import ExternalLink from 'components/shared/ExternalLink'
 
 import { Languages } from 'constants/languages/language-options'
-import V2Switch from './V2Switch'
 
 export default function Footer() {
   const { colors } = useContext(ThemeContext).theme
@@ -15,7 +16,7 @@ export default function Footer() {
     marginBottom: 30,
   }
 
-  const link = (text: string, link?: string) => (
+  const link = (text: string, link: string) => (
     <a
       style={{
         color: colors.text.action.primary,
@@ -30,9 +31,9 @@ export default function Footer() {
 
   // Renders language links
   const languageLink = (lang: string) => (
-    <span key={lang} onClick={() => setLanguage(lang)}>
-      {link(Languages[lang].long)}
-    </span>
+    <Button key={lang} onClick={() => setLanguage(lang)} type="link">
+      {Languages[lang].long}
+    </Button>
   )
 
   // Sets the new language with localStorage and reloads the page
@@ -41,6 +42,9 @@ export default function Footer() {
     window.location.reload()
     window.scrollTo(0, 0) // scroll to top of page after reload
   }
+
+  const gitCommit = process.env.REACT_APP_VERSION
+  const gitCommitLink = `https://github.com/jbx-protocol/juice-interface/commit/${gitCommit}`
 
   return (
     <div
@@ -61,9 +65,15 @@ export default function Footer() {
         {link('Twitter', 'https://twitter.com/juiceboxETH')}
         {link('Privacy Policy', '/#/privacy')}
       </div>
-      <div style={{ display: 'flex', margin: 'auto' }}>
-        <V2Switch labelStyle={{ color: '#fff' }} />
-      </div>
+
+      {gitCommit ? (
+        <span style={{ color: 'white' }}>
+          Version:{' '}
+          <ExternalLink href={gitCommitLink} style={{ fontSize: '0.8rem' }}>
+            #{gitCommit}
+          </ExternalLink>
+        </span>
+      ) : null}
     </div>
   )
 }

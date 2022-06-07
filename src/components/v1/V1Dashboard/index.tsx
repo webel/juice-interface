@@ -21,13 +21,13 @@ import useSymbolOfERC20 from 'hooks/v1/contractReader/SymbolOfERC20'
 import useTerminalOfProject from 'hooks/v1/contractReader/TerminalOfProject'
 import useTokenAddressOfProject from 'hooks/v1/contractReader/TokenAddressOfProject'
 import useUriOfProject from 'hooks/v1/contractReader/UriOfProject'
-import { useCurrencyConverter } from 'hooks/v1/CurrencyConverter'
+import { useCurrencyConverter } from 'hooks/CurrencyConverter'
 import { V1CurrencyOption } from 'models/v1/currencyOption'
 import { useEffect, useMemo } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import { getTerminalName, getTerminalVersion } from 'utils/v1/terminals'
 
-import V1CurrencyProvider from 'providers/v1/V1CurrencyProvider'
+import { V1CurrencyProvider } from 'providers/v1/V1CurrencyProvider'
 
 import { V1CurrencyName } from 'utils/v1/currency'
 
@@ -37,10 +37,11 @@ import Project404 from 'components/shared/Project404'
 
 import { layouts } from 'constants/styles/layouts'
 import { projectTypes } from 'constants/v1/projectTypes'
-import { archivedProjectIds } from 'constants/v1/archivedProjects'
+import { V1ArchivedProjectIds } from 'constants/v1/archivedProjects'
 
 import Loading from '../../shared/Loading'
 import V1Project from '../V1Project'
+import { DEFAULT_SITE_TITLE } from 'constants/siteMetadata'
 
 export default function V1Dashboard() {
   const { handle }: { handle?: string } = useParams()
@@ -97,9 +98,9 @@ export default function V1Dashboard() {
 
   useEffect(() => {
     if (metadata?.name) {
-      document.title = metadata.name
+      document.title = `${metadata.name} | Juicebox`
     } else {
-      document.title = 'Juicebox'
+      document.title = DEFAULT_SITE_TITLE
     }
   }, [metadata])
 
@@ -117,7 +118,8 @@ export default function V1Dashboard() {
       : 'standard'
     const isPreviewMode = false
     const isArchived = projectId
-      ? archivedProjectIds.includes(projectId.toNumber()) || metadata?.archived
+      ? V1ArchivedProjectIds.includes(projectId.toNumber()) ||
+        metadata?.archived
       : false
 
     return {

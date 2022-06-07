@@ -35,6 +35,7 @@ export default function CurrentFundingCycle({
           fundingCycleDetails={
             <FundingCycleDetails
               fundingCycle={fundingCycle}
+              fundingCycleMetadata={fundingCycleMetadata}
               distributionLimit={distributionLimit}
               distributionLimitCurrency={distributionLimitCurrency}
             />
@@ -51,6 +52,7 @@ export default function CurrentFundingCycle({
         payoutSplits={payoutSplits}
         distributionLimitCurrency={distributionLimitCurrency}
         distributionLimit={distributionLimit}
+        fundingCycleDuration={fundingCycle.duration}
       />
       <ReservedTokensSplitsCard
         reservedTokensSplits={reservedTokensSplits}

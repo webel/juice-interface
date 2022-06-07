@@ -28,7 +28,7 @@ import { amountSubFee } from 'utils/math'
 import { V1CurrencyName } from 'utils/v1/currency'
 
 import { V1_CURRENCY_ETH } from 'constants/v1/currency'
-import ProjectPayoutMods from './ProjectPayoutMods'
+import ProjectPayoutMods from './ProjectPayMods/ProjectPayoutMods'
 
 export default function PayoutModsList({
   mods,
@@ -103,6 +103,9 @@ export default function PayoutModsList({
 
   if (!fundingCycle) return null
 
+  const { target } = fundingCycle
+  const targetIsInfinite = !target || target.eq(constants.MaxUint256)
+
   return (
     <div>
       {mods?.length
@@ -145,7 +148,7 @@ export default function PayoutModsList({
           value={
             <div style={{ fontWeight: 400 }}>
               {permyriadToPercent(ownerPercent)}%
-              {!fundingCycle.target.eq(constants.MaxUint256) && (
+              {!targetIsInfinite && (
                 <>
                   {' '}
                   (
@@ -186,7 +189,6 @@ export default function PayoutModsList({
             okText="Save payouts"
             onOk={() => setMods()}
             onCancel={() => {
-              setEditingMods(mods)
               setModalVisible(false)
             }}
             confirmLoading={loading}
@@ -235,6 +237,7 @@ export default function PayoutModsList({
               target={fromWad(fundingCycle.target)}
               currencyName={fundingCycleCurrency}
               feePercentage={perbicentToPercent(feePerbicent)}
+              targetIsInfinite={targetIsInfinite}
             />
           </Modal>
         </Form>

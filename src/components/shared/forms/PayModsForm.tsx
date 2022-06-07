@@ -1,7 +1,6 @@
 import { t, Trans } from '@lingui/macro'
 
 import { Button, Form, Space, Input } from 'antd'
-import { FormItems } from 'components/shared/formItems'
 import { ThemeContext } from 'contexts/themeContext'
 import { BigNumber } from '@ethersproject/bignumber'
 import { useForm } from 'antd/lib/form/Form'
@@ -12,6 +11,9 @@ import { fromWad, perbicentToPercent } from 'utils/formatNumber'
 
 import { getTotalPercentage } from 'components/shared/formItems/formHelpers'
 import { CurrencyContext } from 'contexts/currencyContext'
+import ProjectPayoutMods from 'components/v1/ProjectPayMods/ProjectPayoutMods'
+
+import * as constants from '@ethersproject/constants'
 
 export default function PayModsForm({
   initialMods,
@@ -99,7 +101,7 @@ export default function PayModsForm({
            validate totalPercent */}
           <Input hidden type="string" autoComplete="off" />
         </Form.Item>
-        <FormItems.ProjectPayoutMods
+        <ProjectPayoutMods
           mods={mods}
           target={fromWad(target)}
           currencyName={currency === ETH ? 'ETH' : 'USD'}
@@ -113,6 +115,7 @@ export default function PayModsForm({
           formItemProps={{
             label: t`Payouts (optional)`,
           }}
+          targetIsInfinite={!target || target.eq(constants.MaxUint256)}
         />
         <Form.Item>
           <Button
