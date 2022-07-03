@@ -1,11 +1,14 @@
-import { t } from '@lingui/macro'
+import { t, Trans } from '@lingui/macro'
 import ProjectLogo from 'components/shared/ProjectLogo'
 import { ThemeContext } from 'contexts/themeContext'
 import { useContext } from 'react'
 import { ProjectMetadataV4 } from 'models/project-metadata'
 import Paragraph from 'components/shared/Paragraph'
 
+import { useProjectOwner } from 'hooks/v1/contractReader/ProjectOwner'
+
 import SocialLinks from './SocialLinks'
+import FormattedAddress from '../../../shared/FormattedAddress'
 
 export default function ProjectHeader({
   handle,
@@ -21,9 +24,12 @@ export default function ProjectHeader({
   const {
     theme: { colors },
   } = useContext(ThemeContext)
+  const { owner } = useProjectOwner()
 
   const headerHeight = 120
   const spacing = 20
+
+  const projectTitle = metadata?.name || t`Untitled project`
 
   return (
     <div>
@@ -66,9 +72,12 @@ export default function ProjectHeader({
                 color: metadata?.name
                   ? colors.text.primary
                   : colors.text.placeholder,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
+              title={projectTitle}
             >
-              {metadata?.name || t`Untitled project`}
+              {projectTitle}
             </h1>
 
             {actions ? actions : null}
@@ -117,6 +126,13 @@ export default function ProjectHeader({
               description={metadata.description}
               characterLimit={250}
             />
+          )}
+          {owner && (
+            <span style={{ color: colors.text.secondary }}>
+              <Trans>
+                Owned by: <FormattedAddress address={owner} />
+              </Trans>
+            </span>
           )}
         </div>
       </div>

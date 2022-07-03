@@ -239,6 +239,11 @@ textarea.ant-input::placeholder {
   box-shadow: none !important;
 }
 
+.ant-upload {
+  background-color: var(--background-l1);
+  color: var(--text-primary)
+}
+
 .ant-upload-list,
 .ant-upload-list-text {
   color: var(--text-secondary);
@@ -264,10 +269,6 @@ textarea.ant-input::placeholder {
   min-height: 4px; // get error messages appearing closer to the input fields
 }
 
-// added this rule for when an the 'extra' prop is passed to FormItem (error message needs more space in this case)
-.ant-form-item-control-input-extra-and-error .ant-form-item-control-input {
-  min-height: 23px;
-}
 .ant-input-group-addon {
   background: transparent;
 }
@@ -299,4 +300,12 @@ textarea.ant-input::placeholder {
 
 .ant-form-item-label > label .ant-form-item-optional {
   color: var(--text-primary);
+}
+
+.ant-input-number-disabled {
+  border: 1px solid var(--stroke-tertiary);
+}
+
+.ant-input-number-disabled input {
+  color: var(--text-tertiary) !important;
 }
