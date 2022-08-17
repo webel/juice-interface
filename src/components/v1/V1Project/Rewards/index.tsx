@@ -2,17 +2,15 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { t, Trans } from '@lingui/macro'
 import { Button, Descriptions, Space, Statistic } from 'antd'
 
-import FormattedAddress from 'components/shared/FormattedAddress'
+import FormattedAddress from 'components/FormattedAddress'
 import { NetworkContext } from 'contexts/networkContext'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { ThemeContext } from 'contexts/themeContext'
 import * as constants from '@ethersproject/constants'
 import useERC20BalanceOf from 'hooks/v1/contractReader/ERC20BalanceOf'
 import { useIssueTokensTx } from 'hooks/v1/transactor/IssueTokensTx'
-import {
-  OperatorPermission,
-  useHasPermission,
-} from 'hooks/v1/contractReader/HasPermission'
+import { useV1ConnectedWalletHasPermission } from 'hooks/v1/contractReader/V1ConnectedWalletHasPermission'
+import { V1OperatorPermission } from 'models/v1/permissions'
 import useReservedTokensOfProject from 'hooks/v1/contractReader/ReservedTokensOfProject'
 import useTotalBalanceOf from 'hooks/v1/contractReader/TotalBalanceOf'
 import useTotalSupplyOfProjectToken from 'hooks/v1/contractReader/TotalSupplyOfProjectToken'
@@ -21,11 +19,11 @@ import { CSSProperties, useContext, useState } from 'react'
 import { formatPercent, formatWad } from 'utils/formatNumber'
 import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
-import IssueTokenButton from 'components/shared/IssueTokenButton'
-import SectionHeader from 'components/shared/SectionHeader'
+import IssueTokenButton from 'components/IssueTokenButton'
+import SectionHeader from 'components/SectionHeader'
 import useCanPrintPreminedTokens from 'hooks/v1/contractReader/CanPrintPreminedTokens'
-import ParticipantsModal from 'components/shared/modals/ParticipantsModal'
-import ManageTokensModal from 'components/shared/ManageTokensModal'
+import ParticipantsModal from 'components/modals/ParticipantsModal'
+import ManageTokensModal from 'components/ManageTokensModal'
 
 import RedeemModal from '../modals/RedeemModal'
 import ConfirmUnstakeTokensModal from '../modals/ConfirmUnstakeTokensModal'
@@ -76,7 +74,9 @@ export default function Rewards() {
     ? tokenAddress !== constants.AddressZero
     : false
 
-  const hasIssueTicketsPermission = useHasPermission(OperatorPermission.Issue)
+  const hasIssueTicketsPermission = useV1ConnectedWalletHasPermission(
+    V1OperatorPermission.Issue,
+  )
 
   const labelStyle: CSSProperties = {
     width: 128,
@@ -89,8 +89,8 @@ export default function Rewards() {
   })
 
   const canPrintPreminedV1Tickets = Boolean(useCanPrintPreminedTokens())
-  const userHasMintPermission = useHasPermission(
-    OperatorPermission.PrintTickets,
+  const userHasMintPermission = useV1ConnectedWalletHasPermission(
+    V1OperatorPermission.PrintTickets,
   )
 
   const projectAllowsMint = Boolean(
@@ -211,6 +211,7 @@ export default function Rewards() {
         onCancel={() => setManageTokensModalVisible(false)}
         projectAllowsMint={projectAllowsMint}
         userHasMintPermission={userHasMintPermission}
+        veNftEnabled={false}
         hasOverflow={hasOverflow}
         tokenSymbol={tokenSymbol}
         tokenAddress={tokenAddress}

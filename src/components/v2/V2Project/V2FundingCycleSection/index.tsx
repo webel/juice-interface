@@ -4,10 +4,8 @@ import { SettingOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
 import { ThemeContext } from 'contexts/themeContext'
-import {
-  useHasPermission,
-  V2OperatorPermission,
-} from 'hooks/v2/contractReader/HasPermission'
+import { useV2ConnectedWalletHasPermission } from 'hooks/v2/contractReader/V2ConnectedWalletHasPermission'
+import { V2OperatorPermission } from 'models/v2/permissions'
 import { useContext } from 'react'
 
 import {
@@ -15,13 +13,13 @@ import {
   V2FundingCycleRiskCount,
 } from 'utils/v2/fundingCycle'
 import { serializeV2FundingCycleData } from 'utils/v2/serializers'
-import Loading from 'components/shared/Loading'
+import Loading from 'components/Loading'
 
 import FundingCycleSection, {
   TabType,
-} from 'components/shared/Project/FundingCycleSection'
+} from 'components/Project/FundingCycleSection'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
-import { CardSection } from 'components/shared/CardSection'
+import { CardSection } from 'components/CardSection'
 
 import useProjectQueuedFundingCycle from 'hooks/v2/contractReader/ProjectQueuedFundingCycle'
 
@@ -46,7 +44,9 @@ export default function V2FundingCycleSection({
     projectId,
   } = useContext(V2ProjectContext)
 
-  const canReconfigure = useHasPermission(V2OperatorPermission.RECONFIGURE)
+  const canReconfigure = useV2ConnectedWalletHasPermission(
+    V2OperatorPermission.RECONFIGURE,
+  )
 
   const {
     data: queuedFundingCycleResponse,
@@ -70,9 +70,15 @@ export default function V2FundingCycleSection({
     return <NoFundingCycle />
   }
 
-  const tabText = ({ text }: { text: string }) => {
+  const tabText = ({
+    text,
+    hideRiskFlag,
+  }: {
+    text: string
+    hideRiskFlag?: boolean
+  }) => {
     const hasRisks = fundingCycle && V2FundingCycleRiskCount(fundingCycle)
-    if (!hasRisks) {
+    if (!hasRisks || hideRiskFlag) {
       return text
     }
 
@@ -114,7 +120,7 @@ export default function V2FundingCycleSection({
       },
     {
       key: 'history',
-      label: tabText({ text: t`History` }),
+      label: tabText({ text: t`History`, hideRiskFlag: true }),
       content: (
         <CardSection>
           <FundingCycleHistory />

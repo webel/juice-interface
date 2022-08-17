@@ -1,7 +1,7 @@
 import { parseEther } from '@ethersproject/units'
 import { Trans } from '@lingui/macro'
 import { Descriptions } from 'antd'
-import CurrencySymbol from 'components/shared/CurrencySymbol'
+import CurrencySymbol from 'components/CurrencySymbol'
 
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { ThemeContext } from 'contexts/themeContext'
@@ -25,10 +25,10 @@ import { tokenSymbolText } from 'utils/tokenSymbolText'
 
 import { V1CurrencyName } from 'utils/v1/currency'
 
-import TooltipLabel from 'components/shared/TooltipLabel'
+import TooltipLabel from 'components/TooltipLabel'
 
-import FundingCycleDetailWarning from 'components/shared/Project/FundingCycleDetailWarning'
-import EtherscanLink from 'components/shared/EtherscanLink'
+import FundingCycleDetailWarning from 'components/Project/FundingCycleDetailWarning'
+import EtherscanLink from 'components/EtherscanLink'
 
 import { getBallotStrategyByAddress } from 'constants/v1/ballotStrategies/getBallotStrategiesByAddress'
 import { FUNDING_CYCLE_WARNING_TEXT } from 'constants/fundingWarningText'
@@ -115,6 +115,10 @@ export default function FundingCycleDetails({
 
   const riskWarningText = FUNDING_CYCLE_WARNING_TEXT()
 
+  const ballotWarningText = unsafeFundingCycleProperties.noBallot
+    ? riskWarningText.noBallot
+    : riskWarningText.customBallot
+
   return (
     <div>
       <Descriptions
@@ -187,7 +191,7 @@ export default function FundingCycleDetails({
             span={2}
             label={
               <TooltipLabel
-                label={<Trans>Bonding curve rate</Trans>}
+                label={<Trans>Redemption rate</Trans>}
                 tip={
                   <Trans>
                     This rate determines the amount of overflow that each token
@@ -305,8 +309,11 @@ export default function FundingCycleDetails({
           :
         </span>{' '}
         <FundingCycleDetailWarning
-          showWarning={unsafeFundingCycleProperties.ballot}
-          tooltipTitle={riskWarningText.ballot}
+          showWarning={
+            unsafeFundingCycleProperties.noBallot ||
+            unsafeFundingCycleProperties.customBallot
+          }
+          tooltipTitle={ballotWarningText}
         >
           {ballotStrategy.name}
         </FundingCycleDetailWarning>

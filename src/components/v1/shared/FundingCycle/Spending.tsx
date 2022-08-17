@@ -1,7 +1,7 @@
 import { Trans } from '@lingui/macro'
 import { Button, Space } from 'antd'
 import WithdrawModal from 'components/v1/shared/FundingCycle/modals/WithdrawModal'
-import TooltipLabel from 'components/shared/TooltipLabel'
+import TooltipLabel from 'components/TooltipLabel'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { PayoutMod } from 'models/mods'
 import { useContext, useState } from 'react'
@@ -12,7 +12,8 @@ import { V1CurrencyName } from 'utils/v1/currency'
 
 import { V1CurrencyOption } from 'models/v1/currencyOption'
 import { perbicentToPercent } from 'utils/formatNumber'
-import SpendingStats from 'components/shared/Project/SpendingStats'
+import SpendingStats from 'components/Project/SpendingStats'
+import { useRouter } from 'next/router'
 
 export default function Spending({
   payoutMods,
@@ -24,7 +25,18 @@ export default function Spending({
 
   const [withdrawModalVisible, setWithdrawModalVisible] = useState<boolean>()
 
+  const router = useRouter()
+
   if (!currentFC) return null
+
+  const target = currentFC.target
+  const distributedAmount = currentFC.tapped
+
+  const distributable = target.sub(distributedAmount)
+
+  const distributableAmount = balanceInCurrency?.gt(distributable)
+    ? distributable
+    : balanceInCurrency
 
   return (
     <div>
@@ -41,9 +53,9 @@ export default function Spending({
             currency={V1CurrencyName(
               currentFC.currency.toNumber() as V1CurrencyOption,
             )}
-            projectBalanceInCurrency={balanceInCurrency}
-            targetAmount={currentFC.target}
-            distributedAmount={currentFC.tapped}
+            distributableAmount={distributableAmount}
+            targetAmount={target}
+            distributedAmount={distributedAmount}
             feePercentage={perbicentToPercent(currentFC.fee)}
             ownerAddress={owner}
           />
@@ -86,7 +98,7 @@ export default function Spending({
       <WithdrawModal
         visible={withdrawModalVisible}
         onCancel={() => setWithdrawModalVisible(false)}
-        onConfirmed={() => setWithdrawModalVisible(false)}
+        onConfirmed={() => router.reload()}
       />
     </div>
   )

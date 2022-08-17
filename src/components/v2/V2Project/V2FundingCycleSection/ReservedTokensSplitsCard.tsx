@@ -1,24 +1,21 @@
 import { SettingOutlined } from '@ant-design/icons'
 import { BigNumber } from '@ethersproject/bignumber'
-import * as constants from '@ethersproject/constants'
-import { Trans } from '@lingui/macro'
-import { Button, Skeleton, Space } from 'antd'
-import { CardSection } from 'components/shared/CardSection'
-import FormattedAddress from 'components/shared/FormattedAddress'
-import TooltipLabel from 'components/shared/TooltipLabel'
+import { t, Trans } from '@lingui/macro'
+import { Button, Skeleton, Space, Tooltip } from 'antd'
+import { CardSection } from 'components/CardSection'
+import TooltipLabel from 'components/TooltipLabel'
 import SplitList from 'components/v2/shared/SplitList'
 import { ThemeContext } from 'contexts/themeContext'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
-import {
-  useHasPermission,
-  V2OperatorPermission,
-} from 'hooks/v2/contractReader/HasPermission'
+import { useV2ConnectedWalletHasPermission } from 'hooks/v2/contractReader/V2ConnectedWalletHasPermission'
+import { V2OperatorPermission } from 'models/v2/permissions'
 import useProjectReservedTokens from 'hooks/v2/contractReader/ProjectReservedTokens'
 import { Split } from 'models/v2/splits'
 import { CSSProperties, useContext, useState } from 'react'
 import { formatWad } from 'utils/formatNumber'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
 import { formatReservedRate } from 'utils/v2/math'
+import { reloadWindow } from 'utils/windowUtils'
 
 import DistributeReservedTokensModal from './modals/DistributeReservedTokensModal'
 import { EditTokenAllocationModal } from './modals/EditTokenAllocationModal'
@@ -32,13 +29,8 @@ export default function ReservedTokensSplitsCard({
   reservedTokensSplits: Split[] | undefined
   reservedRate: BigNumber | undefined
 }) {
-  const {
-    tokenSymbol,
-    tokenAddress,
-    projectOwnerAddress,
-    projectId,
-    isPreviewMode,
-  } = useContext(V2ProjectContext)
+  const { tokenSymbol, projectOwnerAddress, projectId, isPreviewMode } =
+    useContext(V2ProjectContext)
   const {
     theme: { colors },
   } = useContext(ThemeContext)
@@ -54,7 +46,9 @@ export default function ReservedTokensSplitsCard({
       projectId,
       reservedRate: reservedRate,
     })
-  const canEditTokens = useHasPermission(V2OperatorPermission.SET_SPLITS)
+  const canEditTokens = useV2ConnectedWalletHasPermission(
+    V2OperatorPermission.SET_SPLITS,
+  )
 
   const smallHeaderStyle: CSSProperties = {
     fontSize: '.7rem',
@@ -69,11 +63,20 @@ export default function ReservedTokensSplitsCard({
     plural: true,
   })
 
-  const tokensTextSingular = tokenSymbolText({
-    tokenSymbol,
-    capitalize: true,
-    plural: false,
-  })
+  const distributeButtonDisabled = isPreviewMode || reservedTokens?.eq(0)
+
+  function DistributeButton(): JSX.Element {
+    return (
+      <Button
+        type="ghost"
+        size="small"
+        onClick={() => setDistributeReservedTokensModalVisible(true)}
+        disabled={distributeButtonDisabled}
+      >
+        <Trans>Distribute {tokensText}</Trans>
+      </Button>
+    )
+  }
 
   return (
     <CardSection>
@@ -121,21 +124,16 @@ export default function ReservedTokensSplitsCard({
                   </Trans>
                 }
               />
-              {tokenAddress && tokenAddress !== constants.AddressZero ? (
-                <div style={smallHeaderStyle}>
-                  {tokensTextSingular} contract address:{' '}
-                  <FormattedAddress address={tokenAddress} />
-                </div>
-              ) : null}
             </div>
-            <Button
-              type="ghost"
-              size="small"
-              onClick={() => setDistributeReservedTokensModalVisible(true)}
-              disabled={isPreviewMode}
-            >
-              <Trans>Distribute {tokensText}</Trans>
-            </Button>
+            {reservedTokens?.eq(0) ? (
+              <Tooltip title={t`No reserved tokens available to distribute.`}>
+                <div>
+                  <DistributeButton />
+                </div>
+              </Tooltip>
+            ) : (
+              <DistributeButton />
+            )}
           </div>
         )}
 
@@ -190,7 +188,7 @@ export default function ReservedTokensSplitsCard({
       <DistributeReservedTokensModal
         visible={distributeReservedTokensModalVisible}
         onCancel={() => setDistributeReservedTokensModalVisible(false)}
-        onConfirmed={() => window.location.reload()}
+        onConfirmed={reloadWindow}
       />
       <EditTokenAllocationModal
         visible={editTokenAllocationModalVisible}

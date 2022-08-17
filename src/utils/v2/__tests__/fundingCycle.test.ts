@@ -8,7 +8,11 @@ import { Wallet } from '@ethersproject/wallet'
 
 import { invertPermyriad } from 'utils/bigNumbers'
 
-import { decodeV2FundingCycleMetadata } from '../fundingCycle'
+import {
+  decodeV2FundingCycleMetadata,
+  isValidMustStartAtOrAfter,
+} from '../fundingCycle'
+import { MaxUint54 } from 'constants/numbers'
 
 /**
  * Returns a mock FundingCyleMetadata packed into a BigNumber
@@ -19,8 +23,6 @@ import { decodeV2FundingCycleMetadata } from '../fundingCycle'
  * @note Passing in an empty obj will use default values below
  */
 function packFundingCycleMetadata(packedMetadata: V2FundingCycleMetadata) {
-  const one = BigNumber.from(1)
-
   const {
     version,
     global,
@@ -42,9 +44,11 @@ function packFundingCycleMetadata(packedMetadata: V2FundingCycleMetadata) {
     dataSource, // address
   } = packedMetadata
 
+  const one = BigNumber.from(1)
+
   let packed = BigNumber.from(version)
   if (global.allowSetTerminals) packed = packed.or(one.shl(8))
-  if (global.allowSetController) packed = packed.or(one.shl(16))
+  if (global.allowSetController) packed = packed.or(one.shl(9))
   packed = packed.or(reservedRate.shl(24))
   packed = packed.or(invertPermyriad(redemptionRate).shl(40))
   packed = packed.or(invertPermyriad(ballotRedemptionRate).shl(56))
@@ -101,7 +105,7 @@ const createMetadata = ({
   }
 }
 
-describe('fundingCycle', () => {
+describe('fundingCycle utils', () => {
   describe('decodeV2FundingCycleMetadata', () => {
     it.each`
       flagsEnabled
@@ -121,5 +125,23 @@ describe('fundingCycle', () => {
         expect(decodeV2FundingCycleMetadata(packedMetadata)).toEqual(metadata)
       },
     )
+  })
+
+  describe('isValidMustStartAtOrAfter', () => {
+    it.each`
+      mustStartAtOrAfter  | duration            | isValid
+      ${0}                | ${0}                | ${true}
+      ${1}                | ${1}                | ${true}
+      ${MaxUint54.sub(1)} | ${0}                | ${true}
+      ${0}                | ${MaxUint54.sub(1)} | ${true}
+      ${0}                | ${MaxUint54}        | ${false}
+      ${MaxUint54}        | ${0}                | ${false}
+      ${0}                | ${MaxUint54.add(1)} | ${false}
+      ${MaxUint54.add(1)} | ${0}                | ${false}
+    `('returns correct result', ({ mustStartAtOrAfter, duration, isValid }) => {
+      expect(isValidMustStartAtOrAfter(mustStartAtOrAfter, duration)).toBe(
+        isValid,
+      )
+    })
   })
 })

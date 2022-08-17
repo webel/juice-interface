@@ -1,13 +1,11 @@
 import { Tooltip } from 'antd'
 import { t, Trans } from '@lingui/macro'
 import { ExclamationCircleOutlined } from '@ant-design/icons'
-import { CardSection } from 'components/shared/CardSection'
+import { CardSection } from 'components/CardSection'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { ThemeContext } from 'contexts/themeContext'
-import {
-  OperatorPermission,
-  useHasPermission,
-} from 'hooks/v1/contractReader/HasPermission'
+import { useV1ConnectedWalletHasPermission } from 'hooks/v1/contractReader/V1ConnectedWalletHasPermission'
+import { V1OperatorPermission } from 'models/v1/permissions'
 import { useContext } from 'react'
 
 import { fundingCycleRiskCount } from 'utils/v1/fundingCycle'
@@ -15,7 +13,7 @@ import { V1FundingCycle } from 'models/v1/fundingCycle'
 import CurrentFundingCycle from 'components/v1/shared/FundingCycle/CurrentFundingCycle'
 import QueuedFundingCycle from 'components/v1/shared/FundingCycle/QueuedFundingCycle'
 
-import FundingCycleSection from 'components/shared/Project/FundingCycleSection'
+import FundingCycleSection from 'components/Project/FundingCycleSection'
 
 import FundingHistory from './FundingHistory'
 import ReconfigureFundingModalTrigger from './ReconfigureFundingModalTrigger'
@@ -86,7 +84,9 @@ export default function FundingCycles({
     },
   ]
 
-  const canReconfigure = useHasPermission(OperatorPermission.Configure)
+  const canReconfigure = useV1ConnectedWalletHasPermission(
+    V1OperatorPermission.Configure,
+  )
 
   if (!projectId) return null
   return (

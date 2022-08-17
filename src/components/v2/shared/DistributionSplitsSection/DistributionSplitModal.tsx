@@ -2,19 +2,19 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { t, Trans } from '@lingui/macro'
 import { DatePicker, Form, InputNumber, Modal, Radio } from 'antd'
 import { useForm } from 'antd/lib/form/Form'
-import CurrencySwitch from 'components/shared/CurrencySwitch'
-import CurrencySymbol from 'components/shared/CurrencySymbol'
-import { FormItems } from 'components/shared/formItems'
+import CurrencySwitch from 'components/CurrencySwitch'
+import CurrencySymbol from 'components/CurrencySymbol'
+import { EthAddressInput } from 'components/inputs/EthAddressInput'
 import {
   ModalMode,
   validateEthAddress,
   validatePercentage,
-} from 'components/shared/formItems/formHelpers'
-import InputAccessoryButton from 'components/shared/InputAccessoryButton'
-import FormattedNumberInput from 'components/shared/inputs/FormattedNumberInput'
-import NumberSlider from 'components/shared/inputs/NumberSlider'
-import TooltipIcon from 'components/shared/TooltipIcon'
-import TooltipLabel from 'components/shared/TooltipLabel'
+} from 'components/formItems/formHelpers'
+import InputAccessoryButton from 'components/InputAccessoryButton'
+import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
+import NumberSlider from 'components/inputs/NumberSlider'
+import TooltipIcon from 'components/TooltipIcon'
+import TooltipLabel from 'components/TooltipLabel'
 import { ThemeContext } from 'contexts/themeContext'
 import { useETHPaymentTerminalFee } from 'hooks/v2/contractReader/ETHPaymentTerminalFee'
 import { findIndex, round } from 'lodash'
@@ -148,7 +148,7 @@ export default function DistributionSplitModal({
       )
     if (isEditingProjectSplit) {
       setEditingSplitType('project')
-      setProjectId(editingSplit.projectId?.toString())
+      setProjectId(parseInt(editingSplit.projectId ?? '').toString())
     }
     setLockedUntil(
       editingSplit.lockedUntil
@@ -278,6 +278,8 @@ export default function DistributionSplitModal({
           s.beneficiary === editingSplit?.beneficiary &&
           s.projectId === editingSplit?.projectId,
       ),
+      // can have a token beneficiary who is also a payout
+      editingSplitType === 'project', // canBeDuplicate
     )
   }
 
@@ -358,22 +360,19 @@ export default function DistributionSplitModal({
         </Form.Item>
 
         {editingSplitType === 'address' ? (
-          <FormItems.EthAddress
+          <Form.Item
             name="beneficiary"
-            defaultValue={form.getFieldValue('beneficiary')}
-            formItemProps={{
-              label: t`Address`,
-              rules: [
-                {
-                  validator: validatePayoutAddress,
-                },
-              ],
-              required: true,
-            }}
-            onAddressChange={beneficiary =>
-              form.setFieldsValue({ beneficiary })
-            }
-          />
+            label={t`Address`}
+            rules={[
+              {
+                validator: validatePayoutAddress,
+                validateTrigger: 'onCreate',
+                required: true,
+              },
+            ]}
+          >
+            <EthAddressInput />
+          </Form.Item>
         ) : (
           <Form.Item
             name={'projectId'}
@@ -392,18 +391,20 @@ export default function DistributionSplitModal({
           </Form.Item>
         )}
         {editingSplitType === 'project' ? (
-          <FormItems.EthAddress
+          <Form.Item
             name="beneficiary"
-            defaultValue={form.getFieldValue('beneficiary')}
-            formItemProps={{
-              label: t`Token beneficiary address`,
-              required: true,
-              extra: t`The address that should receive the tokens minted from paying this project.`,
-            }}
-            onAddressChange={beneficiary => {
-              form.setFieldsValue({ beneficiary })
-            }}
-          />
+            label={t`Token beneficiary address`}
+            extra={t`The address that should receive the tokens minted from paying this project.`}
+            rules={[
+              {
+                validator: validatePayoutAddress,
+                validateTrigger: 'onCreate',
+                required: true,
+              },
+            ]}
+          >
+            <EthAddressInput />
+          </Form.Item>
         ) : null}
 
         {/* Only show amount input if project distribution limit is not infinite */}
@@ -461,7 +462,7 @@ export default function DistributionSplitModal({
                   marginLeft: 10,
                 }}
               >
-                <Trans>{form.getFieldValue('percent')}%</Trans>
+                <Trans>{form.getFieldValue('percent') ?? '0'}%</Trans>
                 <TooltipIcon
                   tip={
                     <Trans>

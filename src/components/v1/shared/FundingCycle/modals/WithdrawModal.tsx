@@ -1,12 +1,12 @@
 import { Space } from 'antd'
-import Modal from 'antd/lib/modal/Modal'
 import { t, Trans } from '@lingui/macro'
 
-import CurrencySymbol from 'components/shared/CurrencySymbol'
-import FormattedAddress from 'components/shared/FormattedAddress'
-import InputAccessoryButton from 'components/shared/InputAccessoryButton'
-import FormattedNumberInput from 'components/shared/inputs/FormattedNumberInput'
+import CurrencySymbol from 'components/CurrencySymbol'
+import FormattedAddress from 'components/FormattedAddress'
+import InputAccessoryButton from 'components/InputAccessoryButton'
+import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
 import PayoutModsList from 'components/v1/shared/PayoutModsList'
+import TransactionModal from 'components/TransactionModal'
 
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { ThemeContext } from 'contexts/themeContext'
@@ -22,6 +22,7 @@ import {
   parseWad,
 } from 'utils/formatNumber'
 import { amountSubFee, feeForAmount } from 'utils/math'
+import ETHAmount from 'components/currency/ETHAmount'
 
 import { V1_CURRENCY_USD } from 'constants/v1/currency'
 
@@ -34,16 +35,17 @@ export default function WithdrawModal({
   onCancel?: VoidFunction
   onConfirmed?: VoidFunction
 }) {
-  const [loading, setLoading] = useState<boolean>()
-  const [tapAmount, setTapAmount] = useState<string>()
   const { balanceInCurrency, projectId, currentFC, currentPayoutMods, owner } =
     useContext(V1ProjectContext)
   const {
     theme: { colors },
   } = useContext(ThemeContext)
 
-  const tapProjectTx = useTapProjectTx()
+  const [loading, setLoading] = useState<boolean>()
+  const [tapAmount, setTapAmount] = useState<string>()
+  const [transactionPending, setTransactionPending] = useState<boolean>()
 
+  const tapProjectTx = useTapProjectTx()
   const converter = useCurrencyConverter()
 
   useEffect(() => {
@@ -68,7 +70,14 @@ export default function WithdrawModal({
     ? untapped
     : balanceInCurrency
 
-  function tap() {
+  const convertedAmountSubFee = amountSubFee(
+    currentFC.currency.eq(V1_CURRENCY_USD)
+      ? converter.usdToWei(tapAmount)
+      : parseWad(tapAmount),
+    currentFC.fee,
+  )
+
+  async function executeTapTx() {
     if (!currentFC || !tapAmount) return
 
     const minAmount = (
@@ -81,33 +90,46 @@ export default function WithdrawModal({
 
     setLoading(true)
 
-    tapProjectTx(
+    const txSuccessful = await tapProjectTx(
       {
         tapAmount: parseWad(tapAmount),
         currency: currentFC.currency.toNumber() as V1CurrencyOption,
         minAmount,
       },
       {
-        onDone: () => setLoading(false),
-        onConfirmed: () => onConfirmed && onConfirmed(),
+        onDone: () => {
+          setTransactionPending(true)
+        },
+        onConfirmed: () => {
+          setLoading(false)
+          setTransactionPending(false)
+          onConfirmed?.()
+        },
       },
     )
+
+    if (!txSuccessful) {
+      setLoading(false)
+      setTransactionPending(false)
+    }
   }
 
   return (
-    <Modal
-      title={t`Withdraw funds`}
+    <TransactionModal
+      title={t`Distribute funds`}
       visible={visible}
-      onOk={tap}
+      onOk={executeTapTx}
       onCancel={() => {
         setTapAmount(undefined)
-        onCancel && onCancel()
+        onCancel?.()
       }}
       okButtonProps={{
         disabled: !tapAmount || tapAmount === '0',
       }}
       confirmLoading={loading}
-      okText={t`Withdraw`}
+      transactionPending={transactionPending}
+      okText={t`Distribute funds`}
+      connectWalletText={t`Connect wallet to distribute`}
       width={640}
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -180,16 +202,7 @@ export default function WithdrawModal({
 
           <div style={{ color: colors.text.primary, marginBottom: 10 }}>
             <span style={{ fontWeight: 500 }}>
-              <CurrencySymbol currency="ETH" />
-              {formatWad(
-                amountSubFee(
-                  currentFC.currency.eq(V1_CURRENCY_USD)
-                    ? converter.usdToWei(tapAmount)
-                    : parseWad(tapAmount),
-                  currentFC.fee,
-                ),
-                { precision: 4 },
-              )}
+              <ETHAmount amount={convertedAmountSubFee} />
             </span>{' '}
             <Trans>
               after {perbicentToPercent(currentFC.fee?.toString())}% JBX fee
@@ -212,22 +225,13 @@ export default function WithdrawModal({
           </div>
         ) : (
           <p>
-            <CurrencySymbol currency="ETH" />
             <Trans>
-              {formatWad(
-                amountSubFee(
-                  currentFC.currency.eq(V1_CURRENCY_USD)
-                    ? converter.usdToWei(tapAmount)
-                    : parseWad(tapAmount),
-                  currentFC.fee,
-                ),
-                { precision: 4 },
-              )}{' '}
-              will go to the project owner: <FormattedAddress address={owner} />
+              <ETHAmount amount={convertedAmountSubFee} /> will go to the
+              project owner: <FormattedAddress address={owner} />
             </Trans>
           </p>
         )}
       </Space>
-    </Modal>
+    </TransactionModal>
   )
 }

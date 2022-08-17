@@ -13,6 +13,7 @@ import { emitErrorNotification } from 'utils/notifications'
 
 import * as Sentry from '@sentry/browser'
 import { t } from '@lingui/macro'
+import { windowOpen } from 'utils/windowUtils'
 
 type TransactorCallback = (e?: TransactionEvent, signer?: JsonRpcSigner) => void
 
@@ -36,16 +37,6 @@ export type TransactorInstance<T = undefined> = (
   txOpts?: Omit<TransactorOptions, 'value'>,
 ) => ReturnType<Transactor>
 
-// Check user has their wallet connected. If not, show select wallet prompt
-const checkWalletConnected = (
-  onSelectWallet: VoidFunction,
-  userAddress?: string,
-) => {
-  if (!userAddress && onSelectWallet) {
-    onSelectWallet()
-  }
-}
-
 // wrapper around BlockNative's Notify.js
 // https://docs.blocknative.com/notify
 export function useTransactor({
@@ -53,11 +44,8 @@ export function useTransactor({
 }: {
   gasPrice?: BigNumber
 }): Transactor | undefined {
-  const {
-    signingProvider: provider,
-    onSelectWallet,
-    userAddress,
-  } = useContext(NetworkContext)
+  const { signingProvider: provider, walletIsReady } =
+    useContext(NetworkContext)
 
   const { isDarkMode } = useContext(ThemeContext)
 
@@ -68,24 +56,19 @@ export function useTransactor({
       args: any[], // eslint-disable-line @typescript-eslint/no-explicit-any
       options?: TransactorOptions,
     ) => {
-      if (!onSelectWallet) return false
+      const ready = await walletIsReady?.()
 
-      if (!provider) {
-        onSelectWallet()
-        if (options?.onDone) options.onDone()
+      if (!ready || !provider) {
+        options?.onDone?.()
         return false
       }
-
-      checkWalletConnected(onSelectWallet, userAddress)
-
-      if (!provider) return false
 
       const signer = provider.getSigner()
 
       const network = await provider.getNetwork()
 
       const notifyOpts: InitOptions = {
-        dappId: process.env.REACT_APP_BLOCKNATIVE_API_KEY,
+        dappId: process.env.NEXT_PUBLIC_BLOCKNATIVE_API_KEY,
         system: 'ethereum',
         networkId: network.chainId,
         darkMode: isDarkMode,
@@ -158,7 +141,7 @@ export function useTransactor({
         if (isNotifyNetwork) {
           const { emitter } = notify.hash(result.hash)
           emitter.on('all', transaction => ({
-            onclick: () => window.open(etherscanTxUrl + transaction.hash),
+            onclick: () => windowOpen(etherscanTxUrl + transaction.hash, false),
           }))
         } else {
           console.info('LOCAL TX SENT', result.hash)
@@ -190,15 +173,15 @@ export function useTransactor({
           description = JSON.parse(json).message || message
         } catch (_) {
           description = message
+          options?.onError?.(new DOMException(description))
+          emitErrorNotification(t`Transaction failed`, { description })
         }
-
-        emitErrorNotification(t`Transaction failed`, { description })
 
         options?.onDone?.()
 
         return false
       }
     },
-    [onSelectWallet, provider, isDarkMode, gasPrice, userAddress],
+    [provider, isDarkMode, gasPrice, walletIsReady],
   )
 }

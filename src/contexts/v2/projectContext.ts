@@ -3,6 +3,7 @@ import { V2BallotState } from 'models/ballot'
 import { CV } from 'models/cv'
 import { ProjectMetadataV4 } from 'models/project-metadata'
 import { V2FundingCycle, V2FundingCycleMetadata } from 'models/v2/fundingCycle'
+import { NftRewardTier } from 'models/v2/nftRewardTier'
 import { Split } from 'models/v2/splits'
 import { createContext } from 'react'
 
@@ -18,11 +19,13 @@ export type V2ProjectContextType = {
   isPreviewMode?: boolean
 
   projectId: number | undefined
+  handle: string | undefined
   createdAt: number | undefined
   cv: CV | undefined
   projectMetadata: ProjectMetadataV4 | undefined
   tokenAddress: string | undefined
   tokenSymbol: string | undefined
+  tokenName: string | undefined
   terminals: string[] | undefined // array of terminal addresses, 0xABC...
   primaryTerminal: string | undefined
   ETHBalance: BigNumber | undefined
@@ -45,6 +48,17 @@ export type V2ProjectContextType = {
   primaryTerminalCurrentOverflow: BigNumber | undefined
   totalTokenSupply: BigNumber | undefined
 
+  nftRewards: {
+    CIDs: string[] | undefined
+    rewardTiers: NftRewardTier[] | undefined
+    loading: boolean | undefined
+  }
+
+  veNft: {
+    contractAddress: string | undefined
+    uriResolver: string | undefined
+  }
+
   loading: V2ProjectLoadingStates
 }
 
@@ -52,11 +66,13 @@ export const V2ProjectContext = createContext<V2ProjectContextType>({
   isPreviewMode: false,
 
   projectId: undefined,
+  handle: undefined,
   createdAt: undefined,
   cv: undefined,
   projectMetadata: undefined,
   tokenAddress: undefined,
   tokenSymbol: undefined,
+  tokenName: undefined,
   terminals: undefined,
   primaryTerminal: undefined,
   ETHBalance: undefined,
@@ -78,6 +94,17 @@ export const V2ProjectContext = createContext<V2ProjectContextType>({
 
   primaryTerminalCurrentOverflow: undefined,
   totalTokenSupply: undefined,
+
+  nftRewards: {
+    CIDs: undefined,
+    rewardTiers: undefined,
+    loading: undefined,
+  },
+
+  veNft: {
+    contractAddress: undefined,
+    uriResolver: undefined,
+  },
 
   loading: {
     ETHBalanceLoading: false,

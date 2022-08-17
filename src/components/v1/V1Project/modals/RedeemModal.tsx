@@ -2,9 +2,9 @@ import { t, Trans } from '@lingui/macro'
 import { Modal, Space, Form } from 'antd'
 import { useForm } from 'antd/lib/form/Form'
 
-import CurrencySymbol from 'components/shared/CurrencySymbol'
-import InputAccessoryButton from 'components/shared/InputAccessoryButton'
-import FormattedNumberInput from 'components/shared/inputs/FormattedNumberInput'
+import ETHAmount from 'components/currency/ETHAmount'
+import InputAccessoryButton from 'components/InputAccessoryButton'
+import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
 
 import { NetworkContext } from 'contexts/networkContext'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
@@ -155,7 +155,7 @@ export default function RedeemModal({
       <Space direction="vertical" style={{ width: '100%' }}>
         <div>
           <p style={statsStyle}>
-            <Trans>Bonding curve:</Trans>{' '}
+            <Trans>Redemption rate:</Trans>{' '}
             <span>
               {fcMetadata?.bondingCurveRate !== undefined
                 ? fcMetadata.bondingCurveRate / 2
@@ -174,8 +174,7 @@ export default function RedeemModal({
             <Trans>
               Currently worth:{' '}
               <span>
-                <CurrencySymbol currency="ETH" />
-                {formatWad(maxClaimable, { precision: 4 })}
+                <ETHAmount amount={maxClaimable} />
               </span>
             </Trans>
           </p>
@@ -183,9 +182,8 @@ export default function RedeemModal({
         <p>
           {overflow?.gt(0) ? (
             <Trans>
-              Tokens can be redeemed for a portion of this project's ETH
-              overflow, according to the bonding curve rate of the current
-              funding cycle.{' '}
+              Tokens can be redeemed for a portion of this project's overflow,
+              according to the redemption rate of the current funding cycle.{' '}
               <span style={{ fontWeight: 500, color: colors.text.warn }}>
                 Tokens are burned when they are redeemed.
               </span>

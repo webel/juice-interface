@@ -1,13 +1,27 @@
+import { FEATURE_FLAGS } from 'constants/featureFlags'
 import { readNetwork } from 'constants/networks'
 
-const FEATURE_FLAG_DEFAULTS: { [k: string]: { [j: string]: boolean } } = {}
+const FEATURE_FLAG_DEFAULTS: {
+  [featureFlag: string]: { [networkName: string]: boolean }
+} = {
+  [FEATURE_FLAGS.NFT_REWARDS]: {
+    rinkeby: true,
+  },
+  [FEATURE_FLAGS.VENFT]: {
+    rinkeby: true,
+  },
+  [FEATURE_FLAGS.VENFT_CREATOR]: {
+    rinkeby: true,
+  },
+}
 
 const featureFlagKey = (baseKey: string) => {
   return `${baseKey}_${readNetwork.name}`
 }
 
 const setFeatureFlag = (featureFlag: string, enabled: boolean) => {
-  localStorage.setItem(featureFlagKey(featureFlag), JSON.stringify(enabled))
+  localStorage &&
+    localStorage.setItem(featureFlagKey(featureFlag), JSON.stringify(enabled))
 }
 
 export const enableFeatureFlag = (featureFlag: string) => {
@@ -31,9 +45,12 @@ export const featureFlagEnabled = (featureFlag: string) => {
   const defaultEnabled = featureFlagDefaultEnabled(featureFlag)
 
   try {
-    return JSON.parse(
-      localStorage.getItem(featureFlagKey(featureFlag)) || `${defaultEnabled}`,
-    )
+    if (localStorage) {
+      return JSON.parse(
+        localStorage.getItem(featureFlagKey(featureFlag)) ||
+          `${defaultEnabled}`,
+      )
+    }
   } catch (e) {
     return defaultEnabled
   }

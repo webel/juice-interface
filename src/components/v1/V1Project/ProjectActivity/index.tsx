@@ -1,13 +1,13 @@
 import { DownloadOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 import { Button, Select, Space } from 'antd'
-import DeployedERC20EventElem from 'components/shared/activityEventElems/DeployedERC20EventElem'
-import PayEventElem from 'components/shared/activityEventElems/PayEventElem'
-import ProjectCreateEventElem from 'components/shared/activityEventElems/ProjectCreateEventElem'
-import RedeemEventElem from 'components/shared/activityEventElems/RedeemEventElem'
-import Loading from 'components/shared/Loading'
+import DeployedERC20EventElem from 'components/activityEventElems/DeployedERC20EventElem'
+import PayEventElem from 'components/activityEventElems/PayEventElem'
+import ProjectCreateEventElem from 'components/activityEventElems/ProjectCreateEventElem'
+import RedeemEventElem from 'components/activityEventElems/RedeemEventElem'
+import Loading from 'components/Loading'
 import V1DownloadActivityModal from 'components/v1/V1Project/V1DownloadActivityModal'
-import SectionHeader from 'components/shared/SectionHeader'
+import SectionHeader from 'components/SectionHeader'
 import { ThemeContext } from 'contexts/themeContext'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { useInfiniteSubgraphQuery } from 'hooks/SubgraphQuery'
@@ -172,6 +172,9 @@ export default function ProjectActivity() {
     where,
   })
 
+  const count =
+    projectEvents?.pages?.reduce((prev, cur) => prev + cur.length, 0) ?? 0
+
   const list = useMemo(
     () =>
       projectEvents?.pages.map(group =>
@@ -229,9 +232,6 @@ export default function ProjectActivity() {
   )
 
   const listStatus = useMemo(() => {
-    const count =
-      projectEvents?.pages?.reduce((prev, cur) => prev + cur.length, 0) ?? 0
-
     if (isLoading || isFetchingNextPage) {
       return (
         <div>
@@ -280,14 +280,7 @@ export default function ProjectActivity() {
         <Trans>{count} total</Trans>
       </div>
     )
-  }, [
-    projectEvents,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-    colors,
-  ])
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, colors, count])
 
   return (
     <div>
@@ -302,11 +295,13 @@ export default function ProjectActivity() {
         <SectionHeader text={t`Activity`} style={{ margin: 0 }} />
 
         <Space direction="horizontal" align="center" size="small">
-          <Button
-            type="text"
-            icon={<DownloadOutlined />}
-            onClick={() => setDownloadModalVisible(true)}
-          />
+          {count > 0 && (
+            <Button
+              type="text"
+              icon={<DownloadOutlined />}
+              onClick={() => setDownloadModalVisible(true)}
+            />
+          )}
 
           <Select
             className="small"

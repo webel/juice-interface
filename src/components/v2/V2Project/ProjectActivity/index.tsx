@@ -1,15 +1,16 @@
 import { DownloadOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 import { Button, Select, Space } from 'antd'
-import DeployedERC20EventElem from 'components/shared/activityEventElems/DeployedERC20EventElem'
-import PayEventElem from 'components/shared/activityEventElems/PayEventElem'
-import ProjectCreateEventElem from 'components/shared/activityEventElems/ProjectCreateEventElem'
-import RedeemEventElem from 'components/shared/activityEventElems/RedeemEventElem'
-import Loading from 'components/shared/Loading'
-import SectionHeader from 'components/shared/SectionHeader'
+import DeployedERC20EventElem from 'components/activityEventElems/DeployedERC20EventElem'
+import PayEventElem from 'components/activityEventElems/PayEventElem'
+import ProjectCreateEventElem from 'components/activityEventElems/ProjectCreateEventElem'
+import RedeemEventElem from 'components/activityEventElems/RedeemEventElem'
+import Loading from 'components/Loading'
+import SectionHeader from 'components/SectionHeader'
 import { ThemeContext } from 'contexts/themeContext'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
 import { useInfiniteSubgraphQuery } from 'hooks/SubgraphQuery'
+import { DeployETHERC20ProjectPayerEvent } from 'models/subgraph-entities/v2/deploy-eth-erc20-project-payer-event'
 import { DistributePayoutsEvent } from 'models/subgraph-entities/v2/distribute-payouts-event'
 import { DistributeReservedTokensEvent } from 'models/subgraph-entities/v2/distribute-reserved-tokens-event'
 import { DeployedERC20Event } from 'models/subgraph-entities/vX/deployed-erc20-event'
@@ -21,6 +22,7 @@ import { useContext, useMemo, useState } from 'react'
 import { WhereConfig } from 'utils/graph'
 
 import V2DownloadActivityModal from '../V2DownloadActivityModal'
+import DeployETHERC20ProjectPayerEventElem from './eventElems/DeployETHERC20ProjectPayerEventElem'
 import DistributePayoutsElem from './eventElems/DistributePayoutsElem'
 import DistributeReservedTokensEventElem from './eventElems/DistributeReservedTokensElem'
 
@@ -34,6 +36,7 @@ type EventFilter =
   | 'distributePayouts'
   | 'distributeTokens'
   | 'distributeReservedTokens'
+  | 'deployETHERC20ProjectPayer'
 // TODO | 'useAllowanceEvent'
 
 export default function ProjectActivity() {
@@ -91,6 +94,9 @@ export default function ProjectActivity() {
       case 'distributeTokens':
         key = 'distributeReservedTokensEvent'
         break
+      case 'deployETHERC20ProjectPayer':
+        key = 'deployETHERC20ProjectPayerEvent'
+        break
     }
 
     if (key) {
@@ -117,7 +123,15 @@ export default function ProjectActivity() {
       'id',
       {
         entity: 'payEvent',
-        keys: ['amount', 'timestamp', 'beneficiary', 'note', 'id', 'txHash'],
+        keys: [
+          'amount',
+          'timestamp',
+          'beneficiary',
+          'note',
+          'id',
+          'txHash',
+          'feeFromV2Project',
+        ],
       },
       {
         entity: 'deployedERC20Event',
@@ -175,11 +189,18 @@ export default function ProjectActivity() {
           'tokenCount',
         ],
       },
+      {
+        entity: 'deployETHERC20ProjectPayerEvent',
+        keys: ['id', 'timestamp', 'txHash', 'caller', 'address', 'memo'],
+      },
     ],
     orderDirection: 'desc',
     orderBy: 'timestamp',
     where,
   })
+
+  const count =
+    projectEvents?.pages?.reduce((prev, cur) => prev + cur.length, 0) ?? 0
 
   const list = useMemo(
     () =>
@@ -223,6 +244,15 @@ export default function ProjectActivity() {
               />
             )
           }
+          if (e.deployETHERC20ProjectPayerEvent) {
+            elem = (
+              <DeployETHERC20ProjectPayerEventElem
+                event={
+                  e.deployETHERC20ProjectPayerEvent as DeployETHERC20ProjectPayerEvent
+                }
+              />
+            )
+          }
           if (e.useAllowanceEvent) {
             // TODO
             // elem = (
@@ -252,9 +282,6 @@ export default function ProjectActivity() {
   )
 
   const listStatus = useMemo(() => {
-    const count =
-      projectEvents?.pages?.reduce((prev, cur) => prev + cur.length, 0) ?? 0
-
     if (isLoading || isFetchingNextPage) {
       return (
         <div>
@@ -303,17 +330,10 @@ export default function ProjectActivity() {
         <Trans>{count} total</Trans>
       </div>
     )
-  }, [
-    projectEvents,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-    colors,
-  ])
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, colors, count])
 
   return (
-    <div>
+    <div style={{ marginTop: '20px' }}>
       <div
         style={{
           display: 'flex',
@@ -325,11 +345,13 @@ export default function ProjectActivity() {
         <SectionHeader text={t`Activity`} style={{ margin: 0 }} />
 
         <Space direction="horizontal" align="center" size="small">
-          <Button
-            type="text"
-            icon={<DownloadOutlined />}
-            onClick={() => setDownloadModalVisible(true)}
-          />
+          {count > 0 && (
+            <Button
+              type="text"
+              icon={<DownloadOutlined />}
+              onClick={() => setDownloadModalVisible(true)}
+            />
+          )}
 
           <Select
             className="small"
@@ -360,6 +382,9 @@ export default function ProjectActivity() {
             </Select.Option> */}
             <Select.Option value="deployERC20">
               <Trans>ERC20 Deployed</Trans>
+            </Select.Option>
+            <Select.Option value="deployETHERC20ProjectPayer">
+              <Trans>ETH-ERC20 Address Created</Trans>
             </Select.Option>
             <Select.Option value="projectCreate">
               <Trans>Project Created</Trans>

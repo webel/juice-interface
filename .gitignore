@@ -26,6 +26,18 @@ mnemonic.txt
 
 # i18n
 src/locales/**/*.js
+src/locales/en/messages.po
 
 # compiled artifacts
 src/styles/antd.css
+
+# Optional REPL history
+.node_repl_history
+.next
+
+# GraphQL Codegen
+graphql.schema.json
+src/generated
+
+# tsc
+*.tsbuildinfo

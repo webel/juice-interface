@@ -1,5 +1,6 @@
+import Link from 'next/link'
 import { useState, useContext, useEffect } from 'react'
-import { Collapse, Space, Button, Menu } from 'antd'
+import { Collapse, Button, Menu } from 'antd'
 import { Header } from 'antd/lib/layout/layout'
 
 import { Trans } from '@lingui/macro'
@@ -11,7 +12,7 @@ import { MenuOutlined } from '@ant-design/icons'
 import { ThemeContext } from 'contexts/themeContext'
 import { NetworkContext } from 'contexts/networkContext'
 
-import FeedbackFormButton from 'components/shared/FeedbackFormButton'
+import FeedbackFormButton from 'components/FeedbackFormButton'
 
 import Logo from '../Logo'
 import Account from '../Account'
@@ -21,6 +22,8 @@ import ThemePickerMobile from './ThemePickerMobile'
 import { topNavStyles } from '../navStyles'
 import ResourcesDropdownMobile from './ResourcesDropdownMobile'
 
+const NAV_EXPANDED_KEY = 0
+
 export default function MobileCollapse() {
   const [activeKey, setActiveKey] = useState<0 | undefined>()
   const {
@@ -28,7 +31,11 @@ export default function MobileCollapse() {
   } = useContext(ThemeContext)
   const { signingProvider, onLogOut } = useContext(NetworkContext)
 
-  const isNavOpen = activeKey === 0
+  const isNavExpanded = activeKey === NAV_EXPANDED_KEY
+
+  const collapseNav = () => setActiveKey(undefined)
+  const expandNav = () => setActiveKey(NAV_EXPANDED_KEY)
+  const toggleNav = () => (isNavExpanded ? collapseNav() : expandNav())
 
   // Close collapse when clicking anywhere in the window except the collapse items
   useEffect(() => {
@@ -58,31 +65,33 @@ export default function MobileCollapse() {
           key={0}
           showArrow={false}
           header={
-            <Space
-              onClick={e => {
-                setActiveKey(isNavOpen ? undefined : 0)
-                e.stopPropagation()
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'space-between',
               }}
             >
-              <a href="/" style={{ display: 'inline-block' }}>
-                {<Logo height={30} />}
-              </a>
+              <Link href="/">
+                <a style={{ display: 'inline-block' }}>
+                  {<Logo height={30} />}
+                </a>
+              </Link>
               <MenuOutlined
                 style={{
                   color: colors.icon.primary,
-                  fontSize: 20,
+                  fontSize: '1.5rem',
                   paddingTop: 6,
                   paddingLeft: 10,
                 }}
+                onClick={toggleNav}
+                role="button"
               />
-            </Space>
+            </div>
           }
         >
           <Menu mode="inline" defaultSelectedKeys={['resources']}>
-            <TopLeftNavItems
-              mobile
-              onClickMenuItems={() => setActiveKey(isNavOpen ? undefined : 0)}
-            />
+            <TopLeftNavItems mobile onClickMenuItems={() => collapseNav()} />
 
             <ResourcesDropdownMobile />
 
@@ -103,11 +112,12 @@ export default function MobileCollapse() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              marginTop: '1rem',
             }}
           >
             <Account />
             {signingProvider ? (
-              <Button onClick={onLogOut} style={{ marginTop: 10 }}>
+              <Button onClick={onLogOut} style={{ marginTop: 10 }} block>
                 <Trans>Disconnect</Trans>
               </Button>
             ) : null}

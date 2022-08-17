@@ -1,22 +1,24 @@
 import { CrownFilled, LockOutlined } from '@ant-design/icons'
-import { Trans } from '@lingui/macro'
+import { t, Trans } from '@lingui/macro'
 import { Tooltip } from 'antd'
 import { ThemeContext } from 'contexts/themeContext'
 import { useContext } from 'react'
 import { formatDate } from 'utils/formatDate'
 
 import { Split } from 'models/v2/splits'
-import TooltipLabel from 'components/shared/TooltipLabel'
-import FormattedAddress from 'components/shared/FormattedAddress'
+import TooltipLabel from 'components/TooltipLabel'
+import FormattedAddress from 'components/FormattedAddress'
 import { formatWad } from 'utils/formatNumber'
 import { BigNumber } from '@ethersproject/bignumber'
-import CurrencySymbol from 'components/shared/CurrencySymbol'
+import CurrencySymbol from 'components/CurrencySymbol'
 import { V2CurrencyOption } from 'models/v2/currencyOption'
 import { V2CurrencyName } from 'utils/v2/currency'
 import { formatSplitPercent, SPLITS_TOTAL_PERCENT } from 'utils/v2/math'
 import useMobile from 'hooks/Mobile'
-import { Link } from 'react-router-dom'
-import TooltipIcon from 'components/shared/TooltipIcon'
+import Link from 'next/link'
+import TooltipIcon from 'components/TooltipIcon'
+import { v2ProjectRoute } from 'utils/routes'
+import useProjectHandle from 'hooks/v2/contractReader/ProjectHandle'
 
 export default function SplitItem({
   split,
@@ -41,6 +43,10 @@ export default function SplitItem({
     theme: { colors },
   } = useContext(ThemeContext)
 
+  const { data: handle } = split.projectId
+    ? useProjectHandle({ projectId: parseInt(split.projectId) })
+    : { data: undefined }
+
   const isProjectOwner = projectOwnerAddress === split.beneficiary
   const isJuiceboxProject = split.projectId
     ? BigNumber.from(split.projectId).gt(0)
@@ -61,24 +67,40 @@ export default function SplitItem({
   const itemFontSize = isMobile ? '0.9rem' : 'unset'
 
   const JuiceboxProjectBeneficiary = () => {
+    const getProjectTooltip = () => {
+      return split.projectId
+        ? t`Juicebox V2 project with ID ${parseInt(split.projectId)}`
+        : t`Juicebox V2 project`
+    }
+    const getProjectLabel = () => {
+      if (handle) {
+        return `@${handle}`
+      }
+      if (split.projectId) {
+        return t`Project ${parseInt(split.projectId)}`
+      }
+      return t`Unknown Project`
+    }
     return (
       <div>
-        {/* TODO figure out project "handles" with ENS resolution */}
-
-        <div style={{ fontWeight: 500 }}>
-          <Tooltip
-            title={<Trans>Juicebox V2 project with ID {split.projectId}</Trans>}
-          >
-            <Link
-              to={`/v2/p/${split.projectId}`}
-              target="_blank"
-              className="text-primary hover-text-action-primary hover-text-decoration-underline"
-            >
-              @{split.projectId}
-            </Link>
+        <div>
+          <Tooltip title={getProjectTooltip()}>
+            <span>
+              <Link
+                href={v2ProjectRoute({ projectId: split.projectId })}
+                target="_blank"
+              >
+                <a
+                  className="text-primary hover-text-action-primary hover-text-decoration-underline"
+                  style={{ fontWeight: 500 }}
+                >
+                  {getProjectLabel()}
+                </a>
+              </Link>
+            </span>
           </Tooltip>
-          :
         </div>
+
         <div
           style={{
             fontSize: '.8rem',

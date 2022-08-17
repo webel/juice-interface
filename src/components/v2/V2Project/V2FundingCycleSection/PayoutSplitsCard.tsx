@@ -1,8 +1,8 @@
 import { Trans } from '@lingui/macro'
-import { Button, Skeleton, Space } from 'antd'
-import { CardSection } from 'components/shared/CardSection'
-import TooltipLabel from 'components/shared/TooltipLabel'
-import SpendingStats from 'components/shared/Project/SpendingStats'
+import { Button, Skeleton, Space, Tooltip } from 'antd'
+import { CardSection } from 'components/CardSection'
+import TooltipLabel from 'components/TooltipLabel'
+import SpendingStats from 'components/Project/SpendingStats'
 import SplitList from 'components/v2/shared/SplitList'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
 import { V2CurrencyOption } from 'models/v2/currencyOption'
@@ -17,10 +17,10 @@ import { useETHPaymentTerminalFee } from 'hooks/v2/contractReader/ETHPaymentTerm
 import { Split } from 'models/v2/splits'
 import { BigNumber } from '@ethersproject/bignumber'
 import { detailedTimeString } from 'utils/formatTime'
-import {
-  useHasPermission,
-  V2OperatorPermission,
-} from 'hooks/v2/contractReader/HasPermission'
+import { useV2ConnectedWalletHasPermission } from 'hooks/v2/contractReader/V2ConnectedWalletHasPermission'
+import { V2OperatorPermission } from 'models/v2/permissions'
+
+import { reloadWindow } from 'utils/windowUtils'
 
 import DistributePayoutsModal from './modals/DistributePayoutsModal'
 import { EditPayoutsModal } from './modals/EditPayoutsModal'
@@ -62,7 +62,40 @@ export default function PayoutSplitsCard({
     fullWords: true,
   })
   const hasDuration = fundingCycleDuration?.gt(0)
-  const canEditPayouts = useHasPermission(V2OperatorPermission.SET_SPLITS)
+  const canEditPayouts = useV2ConnectedWalletHasPermission(
+    V2OperatorPermission.SET_SPLITS,
+  )
+
+  const effectiveDistributionLimit = distributionLimit ?? BigNumber.from(0)
+  const distributedAmount = usedDistributionLimit ?? BigNumber.from(0)
+
+  const distributable = effectiveDistributionLimit.sub(distributedAmount)
+
+  const distributableAmount = balanceInDistributionLimitCurrency?.gt(
+    distributable,
+  )
+    ? distributable
+    : balanceInDistributionLimitCurrency
+
+  const distributeButtonDisabled = isPreviewMode || distributableAmount?.eq(0)
+
+  function DistributeButton(): JSX.Element {
+    return (
+      <Tooltip
+        title={<Trans>No funds available to distribute.</Trans>}
+        visible={distributeButtonDisabled ? undefined : false}
+      >
+        <Button
+          type="ghost"
+          size="small"
+          onClick={() => setDistributePayoutsModalVisible(true)}
+          disabled={distributeButtonDisabled}
+        >
+          <Trans>Distribute funds</Trans>
+        </Button>
+      </Tooltip>
+    )
+  }
 
   return (
     <CardSection>
@@ -87,9 +120,9 @@ export default function PayoutSplitsCard({
                 currency={V2CurrencyName(
                   distributionLimitCurrency?.toNumber() as V2CurrencyOption,
                 )}
-                projectBalanceInCurrency={balanceInDistributionLimitCurrency}
+                distributableAmount={distributableAmount}
                 targetAmount={distributionLimit ?? BigNumber.from(0)}
-                distributedAmount={usedDistributionLimit ?? BigNumber.from(0)}
+                distributedAmount={distributedAmount}
                 feePercentage={
                   ETHPaymentTerminalFee
                     ? formatFee(ETHPaymentTerminalFee)
@@ -99,14 +132,9 @@ export default function PayoutSplitsCard({
               />
             </Skeleton>
 
-            <Button
-              type="ghost"
-              size="small"
-              onClick={() => setDistributePayoutsModalVisible(true)}
-              disabled={isPreviewMode}
-            >
-              <Trans>Distribute funds</Trans>
-            </Button>
+            <div>
+              <DistributeButton />
+            </div>
           </div>
         )}
 
@@ -162,7 +190,7 @@ export default function PayoutSplitsCard({
       <DistributePayoutsModal
         visible={distributePayoutsModalVisible}
         onCancel={() => setDistributePayoutsModalVisible(false)}
-        onConfirmed={() => window.location.reload()}
+        onConfirmed={reloadWindow}
       />
       <EditPayoutsModal
         visible={editPayoutModalVisible}

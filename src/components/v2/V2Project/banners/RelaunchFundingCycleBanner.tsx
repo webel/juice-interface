@@ -2,9 +2,9 @@ import { Trans } from '@lingui/macro'
 import { Button, Form, Input } from 'antd'
 import { useContext, useEffect, useMemo, useState } from 'react'
 
-import Banner from 'components/shared/Banner'
+import Banner from 'components/Banner'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
-import TransactionModal from 'components/shared/TransactionModal'
+import TransactionModal from 'components/TransactionModal'
 import {
   V2FundAccessConstraint,
   V2FundingCycleData,
@@ -17,6 +17,8 @@ import useProjectDistributionLimit from 'hooks/v2/contractReader/ProjectDistribu
 import useProjectCurrentFundingCycle from 'hooks/v2/contractReader/ProjectCurrentFundingCycle'
 import useProjectSplits from 'hooks/v2/contractReader/ProjectSplits'
 import { useLaunchFundingCyclesTx } from 'hooks/v2/transactor/LaunchFundingCyclesTx'
+
+import { reloadWindow } from 'utils/windowUtils'
 
 import {
   ETH_PAYOUT_SPLIT_GROUP,
@@ -156,7 +158,7 @@ export function RelaunchFundingCycleBanner() {
         },
         onConfirmed() {
           setTransactionPending(false)
-          window.location.reload()
+          reloadWindow()
         },
       },
     )

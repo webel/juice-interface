@@ -3,10 +3,10 @@ import { Button, Form, Radio, Space } from 'antd'
 import { useCallback, useContext, useEffect, useState } from 'react'
 
 import { Split } from 'models/v2/splits'
-import { FormItemExt } from 'components/shared/formItems/formItemExt'
+import { FormItemExt } from 'components/formItems/formItemExt'
 import { fromWad, parseWad } from 'utils/formatNumber'
 import DistributionLimit from 'components/v2/V2Project/DistributionLimit'
-import TooltipIcon from 'components/shared/TooltipIcon'
+import TooltipIcon from 'components/TooltipIcon'
 import {
   adjustedSplitPercents,
   getNewDistributionLimit,
@@ -15,9 +15,11 @@ import {
 import { ThemeContext } from 'contexts/themeContext'
 import { MAX_DISTRIBUTION_LIMIT, splitPercentFrom } from 'utils/v2/math'
 import { NetworkContext } from 'contexts/networkContext'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 
 import { filter } from 'lodash'
+
+import { v2ProjectRoute } from 'utils/routes'
 
 import DistributionSplitCard from './DistributionSplitCard'
 import { CurrencyName } from 'constants/currency'
@@ -250,8 +252,10 @@ export default function DistributionSplitsSection({
                     When distributing, payouts to Ethereum addresses incur a
                     2.5% JBX membership fee. Payouts to other Juicebox projects
                     don't incur fees. Your project will receive (the{' '}
-                    <Link to="/v2/p/1">JuiceboxDAO</Link> token) in return at
-                    the current issuance rate.
+                    <Link href={v2ProjectRoute({ projectId: 1 })}>
+                      JuiceboxDAO
+                    </Link>{' '}
+                    token) in return at the current issuance rate.
                   </Trans>
                 }
               />

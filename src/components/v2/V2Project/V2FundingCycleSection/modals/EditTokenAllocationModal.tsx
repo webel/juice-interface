@@ -1,13 +1,13 @@
 import { t, Trans } from '@lingui/macro'
 import { Form, Modal } from 'antd'
-import Callout from 'components/shared/Callout'
-import { FormItems } from 'components/shared/formItems'
+import Callout from 'components/Callout'
+import { FormItems } from 'components/formItems'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
 import { useSetProjectSplits } from 'hooks/v2/transactor/SetProjectSplits'
 import { Split } from 'models/v2/splits'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { emitErrorNotification } from 'utils/notifications'
-import { preciseFormatSplitPercent } from 'utils/v2/math'
+import { formatReservedRate, preciseFormatSplitPercent } from 'utils/v2/math'
 import { toMod, toSplit } from 'utils/v2/splits'
 
 import { RESERVED_TOKEN_SPLIT_GROUP } from 'constants/v2/splits'
@@ -109,7 +109,7 @@ export const EditTokenAllocationModal = ({
               </Trans>
             ),
           }}
-          reservedRate={reservedRate?.toNumber() ?? 0}
+          reservedRate={parseInt(formatReservedRate(reservedRate))}
         />
       </Form>
     </Modal>

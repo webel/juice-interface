@@ -1,8 +1,10 @@
+import { useRouter } from 'next/router'
+import Link from 'next/link'
 import { t, Trans } from '@lingui/macro'
 import { CSSProperties, useEffect, useState } from 'react'
 import { Dropdown, Menu, Space } from 'antd'
 import { DownOutlined, UpOutlined } from '@ant-design/icons'
-import ExternalLink from 'components/shared/ExternalLink'
+import ExternalLink from 'components/ExternalLink'
 
 import Logo from './Logo'
 import {
@@ -10,6 +12,7 @@ import {
   navMenuItemStyles,
   topLeftNavStyles,
 } from './navStyles'
+
 import { resourcesMenuItems } from './constants'
 
 function NavMenuItem({
@@ -21,22 +24,44 @@ function NavMenuItem({
   route?: string
   onClick?: VoidFunction
 }) {
+  if (!route) {
+    return (
+      <div
+        className="nav-menu-item hover-opacity"
+        onClick={onClick}
+        role="button"
+        style={navMenuItemStyles}
+      >
+        {text}
+      </div>
+    )
+  }
+
   const external = route?.startsWith('http')
+  if (external) {
+    return (
+      <ExternalLink
+        className="nav-menu-item hover-opacity"
+        style={navMenuItemStyles}
+        href={route}
+        onClick={onClick}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {text}
+      </ExternalLink>
+    )
+  }
   return (
-    <a
-      className="nav-menu-item hover-opacity"
-      href={route}
-      onClick={onClick}
-      {...(external
-        ? {
-            target: '_blank',
-            rel: 'noreferrer',
-          }
-        : {})}
-      style={navMenuItemStyles}
-    >
-      {text}
-    </a>
+    <Link href={route}>
+      <a
+        className="nav-menu-item hover-opacity"
+        onClick={onClick}
+        style={navMenuItemStyles}
+      >
+        {text}
+      </a>
+    </Link>
   )
 }
 
@@ -63,6 +88,7 @@ export function TopLeftNavItems({
   mobile?: boolean
   onClickMenuItems?: VoidFunction
 }) {
+  const router = useRouter()
   const [resourcesOpen, setResourcesOpen] = useState<boolean>(false)
   const dropdownIconStyle: CSSProperties = {
     fontSize: 13,
@@ -85,26 +111,24 @@ export function TopLeftNavItems({
       direction={mobile ? 'vertical' : 'horizontal'}
     >
       {!mobile && (
-        <a href="/" style={{ display: 'inline-block' }}>
-          {<Logo />}
-        </a>
+        <Link href="/">
+          <a style={{ display: 'inline-block' }}>{<Logo />}</a>
+        </Link>
       )}
       <NavMenuItem
         text={t`Projects`}
         onClick={onClickMenuItems}
-        route="/#/projects"
+        route="/projects"
       />
       <NavMenuItem
         text={t`FAQ`}
-        route={undefined}
         onClick={() => {
-          if (onClickMenuItems) onClickMenuItems()
-          window.location.hash = '/'
-          setTimeout(() => {
+          router.push('/').then(() => {
             document
               .getElementById('faq')
               ?.scrollIntoView({ behavior: 'smooth' })
-          }, 0)
+            onClickMenuItems?.()
+          })
         }}
       />
       <NavMenuItem

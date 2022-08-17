@@ -1,16 +1,19 @@
 import { BigNumber } from '@ethersproject/bignumber'
-import { isAddress } from '@ethersproject/address'
 import { t, Trans } from '@lingui/macro'
-import { Checkbox, Descriptions, Form, Space, Switch } from 'antd'
+import { Descriptions, Space } from 'antd'
 import { useForm } from 'antd/lib/form/Form'
-import FormattedAddress from 'components/shared/FormattedAddress'
-import ImageUploader from 'components/shared/inputs/ImageUploader'
+import FormattedAddress from 'components/FormattedAddress'
 import { NetworkContext } from 'contexts/networkContext'
 import { useCurrencyConverter } from 'hooks/CurrencyConverter'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
+import TooltipLabel from 'components/TooltipLabel'
+
+import { NftRewardTier } from 'models/v2/nftRewardTier'
 
 import { useContext, useState } from 'react'
-import { formattedNum, formatWad } from 'utils/formatNumber'
+import { formattedNum, formatWad, fromWad } from 'utils/formatNumber'
+
+import { buildPaymentMemo } from 'utils/buildPaymentMemo'
 
 import { tokenSymbolText } from 'utils/tokenSymbolText'
 import {
@@ -18,26 +21,23 @@ import {
   V2_CURRENCY_ETH,
   V2_CURRENCY_USD,
 } from 'utils/v2/currency'
-import { usePayV2ProjectTx } from 'hooks/v2/transactor/PayV2ProjectTx'
+import { usePayETHPaymentTerminalTx } from 'hooks/v2/transactor/PayETHPaymentTerminal'
+import { emitErrorNotification } from 'utils/notifications'
+import { ThemeContext } from 'contexts/themeContext'
 
-import { FormItems } from 'components/shared/formItems'
-
-import * as constants from '@ethersproject/constants'
-
-import {
-  getUnsafeV2FundingCycleProperties,
-  V2FundingCycleRiskCount,
-} from 'utils/v2/fundingCycle'
-
-import Paragraph from 'components/shared/Paragraph'
-
+import Paragraph from 'components/Paragraph'
 import { weightedAmount } from 'utils/v2/math'
+import TransactionModal from 'components/TransactionModal'
+import Callout from 'components/Callout'
+import useMobile from 'hooks/Mobile'
+import { getNftRewardTier } from 'utils/v2/nftRewards'
+import { featureFlagEnabled } from 'utils/featureFlags'
 
-import TransactionModal from 'components/shared/TransactionModal'
-import ProjectRiskNotice from 'components/shared/ProjectRiskNotice'
-import MemoFormItem from 'components/shared/inputs/Pay/MemoFormItem'
+import { V2PayForm, V2PayFormType } from '../V2PayForm'
+import { NftRewardCell } from './NftRewardCell'
+import { FEATURE_FLAGS } from 'constants/featureFlags'
 
-export default function V2ConfirmPayModal({
+export function V2ConfirmPayModal({
   visible,
   weiAmount,
   onSuccess,
@@ -50,26 +50,27 @@ export default function V2ConfirmPayModal({
 }) {
   const { userAddress, onSelectWallet } = useContext(NetworkContext)
   const {
+    theme: { colors },
+  } = useContext(ThemeContext)
+  const {
     fundingCycle,
     fundingCycleMetadata,
     projectMetadata,
     projectId,
-    tokenAddress,
     tokenSymbol,
+    nftRewards: { rewardTiers },
   } = useContext(V2ProjectContext)
-  const converter = useCurrencyConverter()
-  const payProjectTx = usePayV2ProjectTx()
 
   const [loading, setLoading] = useState<boolean>()
-  const [preferClaimed, setPreferClaimed] = useState<boolean>(false)
-  const [customBeneficiaryEnabled, setCustomBeneficiaryEnabled] =
-    useState<boolean>(false)
-  const [memo, setMemo] = useState<string>('')
   const [transactionPending, setTransactionPending] = useState<boolean>()
+  const [form] = useForm<V2PayFormType>()
 
-  const [form] = useForm<{ beneficiary: string }>()
+  const converter = useCurrencyConverter()
+  const payProjectTx = usePayETHPaymentTerminalTx()
+  const isMobile = useMobile()
 
   const usdAmount = converter.weiToUsd(weiAmount)
+  const nftRewardTiers = rewardTiers //rewardTiers
 
   if (!fundingCycle || !projectId || !projectMetadata) return null
 
@@ -88,17 +89,29 @@ export default function V2ConfirmPayModal({
     'reserved',
   )
 
-  const riskCount = fundingCycle
-    ? V2FundingCycleRiskCount(fundingCycle)
-    : undefined
+  const tokenText = tokenSymbolText({
+    tokenSymbol,
+    plural: true,
+  })
 
-  const hasIssuedTokens = tokenAddress && tokenAddress !== constants.AddressZero
+  let nftRewardTier: NftRewardTier | null = null
+  if (nftRewardTiers && featureFlagEnabled(FEATURE_FLAGS.NFT_REWARDS)) {
+    nftRewardTier = getNftRewardTier({
+      nftRewardTiers,
+      payAmountETH: parseFloat(fromWad(weiAmount)),
+    })
+  }
 
   async function pay() {
     if (!weiAmount) return
-    await form.validateFields()
 
-    const beneficiary = form.getFieldValue('beneficiary')
+    const {
+      beneficiary,
+      memo: textMemo,
+      preferClaimedTokens,
+      stickerUrls,
+      uploadedImage,
+    } = form.getFieldsValue()
     const txBeneficiary = beneficiary ? beneficiary : userAddress
 
     // Prompt wallet connect if no wallet connected
@@ -107,40 +120,44 @@ export default function V2ConfirmPayModal({
     }
     setLoading(true)
 
-    const txSuccess = await payProjectTx(
-      {
-        memo,
-        preferClaimedTokens: preferClaimed,
-        beneficiary: txBeneficiary,
-        value: weiAmount,
-      },
-      {
-        onConfirmed() {
-          setLoading(false)
-          setTransactionPending(false)
-
-          onSuccess?.()
+    try {
+      const txSuccess = await payProjectTx(
+        {
+          memo: buildPaymentMemo({
+            text: textMemo,
+            imageUrl: uploadedImage,
+            stickerUrls,
+          }),
+          preferClaimedTokens: Boolean(preferClaimedTokens),
+          beneficiary: txBeneficiary,
+          value: weiAmount,
         },
-        onDone() {
-          setTransactionPending(true)
-        },
-      },
-    )
+        {
+          onConfirmed() {
+            setLoading(false)
+            setTransactionPending(false)
 
-    if (!txSuccess) {
+            onSuccess?.()
+          },
+          onError() {
+            setLoading(false)
+            setTransactionPending(false)
+          },
+          onDone() {
+            setTransactionPending(true)
+          },
+        },
+      )
+
+      if (!txSuccess) {
+        setLoading(false)
+        setTransactionPending(false)
+      }
+    } catch (error) {
+      emitErrorNotification(`Failure: ${error}`)
       setLoading(false)
       setTransactionPending(false)
     }
-  }
-
-  const validateCustomBeneficiary = () => {
-    const beneficiary = form.getFieldValue('beneficiary')
-    if (!beneficiary) {
-      return Promise.reject(t`Address required`)
-    } else if (!isAddress(beneficiary)) {
-      return Promise.reject(t`Invalid address`)
-    }
-    return Promise.resolve()
   }
 
   return (
@@ -148,53 +165,46 @@ export default function V2ConfirmPayModal({
       transactionPending={transactionPending}
       title={t`Pay ${projectMetadata.name}`}
       visible={visible}
-      onOk={pay}
+      onOk={() => form.submit()}
       okText={t`Pay`}
       connectWalletText={t`Connect wallet to pay`}
       onCancel={onCancel}
       confirmLoading={loading}
       width={640}
-      centered={true}
+      centered
+      destroyOnClose
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <p>
-          <Trans>
-            Paying <strong>{projectMetadata.name}</strong> is not an investment
-            — it's a way to support the project. Any value or utility of the
-            tokens you receive is determined by{' '}
-            <strong>{projectMetadata.name}</strong>.
-          </Trans>
-        </p>
-
         {projectMetadata.payDisclosure && (
-          <div>
-            <h4>
-              <Trans>Notice from {projectMetadata.name}:</Trans>
-            </h4>
-            <Paragraph description={projectMetadata.payDisclosure} />
-          </div>
+          <Callout
+            style={{
+              background: 'none',
+              border: '1px solid' + colors.stroke.secondary,
+            }}
+          >
+            <strong>
+              <Trans>Notice from {projectMetadata.name}</Trans>
+            </strong>
+            <Paragraph
+              description={projectMetadata.payDisclosure}
+              style={{ fontStyle: 'italic', fontSize: '0.8rem' }}
+            />
+          </Callout>
         )}
 
-        {riskCount && fundingCycle ? (
-          <ProjectRiskNotice
-            unsafeProperties={getUnsafeV2FundingCycleProperties(fundingCycle)}
-          />
-        ) : null}
-
-        <Descriptions column={1} bordered>
+        <Descriptions column={1} bordered size={isMobile ? 'small' : 'default'}>
           <Descriptions.Item label={t`Pay amount`} className="content-right">
             {formattedNum(usdAmount)} {V2CurrencyName(V2_CURRENCY_USD)} (
             {formatWad(weiAmount)} {V2CurrencyName(V2_CURRENCY_ETH)})
           </Descriptions.Item>
           <Descriptions.Item
-            label={t`${tokenSymbolText({
-              capitalize: true,
-              plural: true,
-            })} for you`}
+            label={<Trans>Tokens for you</Trans>}
             className="content-right"
           >
-            <div>{formatWad(receivedTickets, { precision: 0 })}</div>
             <div>
+              {formatWad(receivedTickets, { precision: 0 })} {tokenText}
+            </div>
+            <div style={{ fontSize: '0.7rem' }}>
               {userAddress ? (
                 <Trans>
                   To: <FormattedAddress address={userAddress} />
@@ -203,79 +213,42 @@ export default function V2ConfirmPayModal({
             </div>
           </Descriptions.Item>
           <Descriptions.Item
-            label={t`${tokenSymbolText({
-              tokenSymbol: tokenSymbol,
-              capitalize: true,
-              plural: true,
-            })} reserved`}
+            label={
+              <TooltipLabel
+                label={t`Tokens reserved`}
+                tip={
+                  <Trans>
+                    This project reserves some of the newly minted tokens for
+                    itself.
+                  </Trans>
+                }
+              />
+            }
             className="content-right"
           >
-            {formatWad(ownerTickets, { precision: 0 })}
+            {formatWad(ownerTickets, { precision: 0 })} {tokenText}
           </Descriptions.Item>
+          {nftRewardTier ? (
+            <Descriptions.Item
+              label={
+                <TooltipLabel
+                  label={t`NFT reward`}
+                  tip={
+                    <Trans>
+                      You receive this NFT for contributing over{' '}
+                      <strong>{nftRewardTier.contributionFloor} ETH</strong>.
+                    </Trans>
+                  }
+                />
+              }
+              style={{ padding: '0.625rem 1.5rem' }}
+            >
+              <NftRewardCell nftReward={nftRewardTier} />
+            </Descriptions.Item>
+          ) : null}
         </Descriptions>
-        <Form form={form} layout="vertical">
-          <MemoFormItem value={memo} onChange={setMemo} />
-          <Form.Item>
-            <ImageUploader
-              text={t`Add image`}
-              onSuccess={url => {
-                if (!url) return
-                setMemo(memo.length ? memo + ' ' + url : url)
-              }}
-            />
-          </Form.Item>
-          <Form.Item
-            label={
-              <>
-                <Trans>Custom token beneficiary</Trans>
-                <Switch
-                  checked={customBeneficiaryEnabled}
-                  onChange={setCustomBeneficiaryEnabled}
-                  style={{ marginLeft: 10 }}
-                />
-              </>
-            }
-            extra={<Trans>Mint tokens to a custom address.</Trans>}
-            style={{ marginBottom: '1rem' }}
-          />
 
-          {customBeneficiaryEnabled && (
-            <FormItems.EthAddress
-              defaultValue={undefined}
-              name={'beneficiary'}
-              onAddressChange={beneficiary => {
-                form.setFieldsValue({ beneficiary })
-              }}
-              formItemProps={{
-                rules: [
-                  {
-                    validator: validateCustomBeneficiary,
-                  },
-                ],
-              }}
-            />
-          )}
-
-          {hasIssuedTokens && (
-            <Form.Item label={t`Receive ERC-20`}>
-              <Space align="start">
-                <Checkbox
-                  style={{ padding: 20 }}
-                  checked={preferClaimed}
-                  onChange={e => setPreferClaimed(e.target.checked)}
-                />
-                <label htmlFor="preferClaimed">
-                  <Trans>
-                    Check this to mint this project's ERC-20 tokens to your
-                    wallet. Leave unchecked to have your token balance tracked
-                    by Juicebox, saving gas on this transaction. You can always
-                    claim your ERC-20 tokens later.
-                  </Trans>
-                </label>
-              </Space>
-            </Form.Item>
-          )}
-        </Form>
+        <V2PayForm form={form} onFinish={() => pay()} />
       </Space>
     </TransactionModal>
   )

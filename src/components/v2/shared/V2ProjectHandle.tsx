@@ -1,28 +1,26 @@
-import { BigNumberish } from '@ethersproject/bignumber'
 import { Trans } from '@lingui/macro'
-import ProjectVersionBadge from 'components/shared/ProjectVersionBadge'
+import useProjectHandle from 'hooks/v2/contractReader/ProjectHandle'
 import { CSSProperties } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
+import { v2ProjectRoute } from 'utils/routes'
 
 export default function V2ProjectHandle({
   projectId,
   style,
 }: {
-  projectId: BigNumberish
+  projectId: number
   style?: CSSProperties
 }) {
+  const { data: handle } = useProjectHandle({ projectId })
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <Link
-        to={`/v2/p/${projectId}`}
-        style={{ fontWeight: 500, ...style }}
+    <Link href={v2ProjectRoute({ projectId, handle })}>
+      <a
+        style={{ fontWeight: 500, marginRight: '0.5rem', ...style }}
         className="text-primary hover-text-action-primary hover-text-decoration-underline"
       >
-        <span style={{ marginRight: '0.5rem' }}>
-          <Trans>Project {projectId}</Trans>
-        </span>
-      </Link>
-      <ProjectVersionBadge versionText="V2" size="small" />
-    </div>
+        {handle ? `@${handle}` : <Trans>Project {projectId}</Trans>}
+      </a>
+    </Link>
   )
 }

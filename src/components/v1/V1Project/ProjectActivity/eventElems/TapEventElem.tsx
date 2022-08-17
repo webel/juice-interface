@@ -1,17 +1,16 @@
-import CurrencySymbol from 'components/shared/CurrencySymbol'
-import FormattedAddress from 'components/shared/FormattedAddress'
+import FormattedAddress from 'components/FormattedAddress'
 import V1ProjectHandle from 'components/v1/shared/V1ProjectHandle'
-import EtherscanLink from 'components/shared/EtherscanLink'
+import EtherscanLink from 'components/EtherscanLink'
 
 import { ThemeContext } from 'contexts/themeContext'
 import useSubgraphQuery from 'hooks/SubgraphQuery'
 import { TapEvent } from 'models/subgraph-entities/v1/tap-event'
 import { useContext } from 'react'
 import { formatHistoricalDate } from 'utils/formatDate'
-import { formatWad } from 'utils/formatNumber'
 
 import { Trans } from '@lingui/macro'
-import { smallHeaderStyle } from 'components/shared/activityEventElems/styles'
+import { smallHeaderStyle } from 'components/activityEventElems/styles'
+import ETHAmount from 'components/currency/ETHAmount'
 
 export default function TapEventElem({
   event,
@@ -67,10 +66,23 @@ export default function TapEventElem({
         style={{
           display: 'flex',
           justifyContent: 'space-between',
+          alignContent: 'space-between',
         }}
       >
-        <div style={smallHeaderStyle(colors)}>
-          <Trans>Distributed funds</Trans>
+        <div>
+          <div style={smallHeaderStyle(colors)}>
+            <Trans>Distributed funds</Trans>
+          </div>
+          {payoutEvents?.length ? (
+            <div
+              style={{
+                color: colors.text.primary,
+                fontWeight: 500,
+              }}
+            >
+              <ETHAmount amount={event.netTransferAmount} />
+            </div>
+          ) : null}
         </div>
 
         <div
@@ -115,8 +127,7 @@ export default function TapEventElem({
             </div>
 
             <div style={{ color: colors.text.secondary }}>
-              <CurrencySymbol currency="ETH" />
-              {formatWad(e.modCut, { precision: 4 })}
+              <ETHAmount amount={e.modCut} />
             </div>
           </div>
         ))}
@@ -143,25 +154,11 @@ export default function TapEventElem({
                   : { fontWeight: 500 }
               }
             >
-              <CurrencySymbol currency="ETH" />
-              {formatWad(event.beneficiaryTransferAmount, { precision: 4 })}
+              <ETHAmount amount={event.beneficiaryTransferAmount} />
             </div>
           </div>
         )}
       </div>
-
-      {payoutEvents?.length && payoutEvents.length > 1 ? (
-        <div
-          style={{
-            color: colors.text.primary,
-            fontWeight: 500,
-            textAlign: 'right',
-          }}
-        >
-          <CurrencySymbol currency="ETH" />
-          {formatWad(event.netTransferAmount, { precision: 4 })}
-        </div>
-      ) : null}
     </div>
   )
 }

@@ -2,13 +2,7 @@ import { t, Trans } from '@lingui/macro'
 import { Button, Modal, Skeleton, Space } from 'antd'
 import DistributionSplitCard from 'components/v2/shared/DistributionSplitsSection/DistributionSplitCard'
 import { defaultSplit, Split } from 'models/v2/splits'
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { getTotalSplitsPercentage } from 'utils/v2/distributions'
 import { ThemeContext } from 'contexts/themeContext'
 import DistributionSplitModal from 'components/v2/shared/DistributionSplitsSection/DistributionSplitModal'
@@ -20,11 +14,11 @@ import { useSetProjectSplits } from 'hooks/v2/transactor/SetProjectSplits'
 import { NetworkContext } from 'contexts/networkContext'
 import { MAX_DISTRIBUTION_LIMIT, splitPercentFrom } from 'utils/v2/math'
 import { formatWad } from 'utils/formatNumber'
+import Callout from 'components/Callout'
+import { SplitCsvUpload } from 'components/SplitCsvUpload/SplitCsvUpload'
+import TooltipLabel from 'components/TooltipLabel'
 
-import { ExclamationCircleOutlined, SettingOutlined } from '@ant-design/icons'
-
-import CurrencySymbol from 'components/shared/CurrencySymbol'
-import { useHistory } from 'react-router-dom'
+import CurrencySymbol from 'components/CurrencySymbol'
 
 import { ETH_PAYOUT_SPLIT_GROUP } from 'constants/v2/splits'
 
@@ -64,68 +58,17 @@ const OwnerSplitCard = ({ splits }: { splits: Split[] }) => {
   )
 }
 
-const isLockedSplit = (split: Split) => {
-  const now = new Date().valueOf() / 1000
-  const { payoutSplits } = useContext(V2ProjectContext)
-  // Checks if the given split exists in the projectContext splits.
-  // If it doesn't, then it means it was just added or edited is which case
-  // we want to still be able to edit it
-  const confirmedSplitsIncludesSplit =
-    payoutSplits?.find(confirmedSplit => isEqual(confirmedSplit, split)) !==
-    undefined
-  return (
-    split.lockedUntil && split.lockedUntil > now && confirmedSplitsIncludesSplit
-  )
-}
-
-const getLockedSplits = (splits: Split[]) => {
-  const lockedSplits = splits.filter(split => isLockedSplit(split))
-  return lockedSplits
-}
-
-const getEditableSplits = (splits: Split[]) => {
-  const editableSplits = splits.filter(split => !isLockedSplit(split))
-  return editableSplits
-}
-
-const DescriptionParagraphOne = () => (
-  <p>
-    <Trans>
-      Reconfigure payouts as percentages of your distribution limit.
-    </Trans>
-  </p>
-)
-const DescriptionParagraphTwo = () => {
-  const {
-    theme: { colors },
-  } = useContext(ThemeContext)
-  return (
-    <p>
-      <Space size="small">
-        <ExclamationCircleOutlined
-          style={{
-            color: colors.text.warn,
-          }}
-        />
-        <Trans>Changes to payouts will take effect immediately.</Trans>
-      </Space>
-    </p>
-  )
-}
-
 const DistributionLimitHeader = ({
   style,
 }: {
   style?: React.CSSProperties
 }) => {
   const {
-    fundingCycle,
     distributionLimit,
     distributionLimitCurrency,
     loading: { distributionLimitLoading, fundingCycleLoading },
   } = useContext(V2ProjectContext)
 
-  const history = useHistory()
   const currency = V2CurrencyName(
     distributionLimitCurrency?.toNumber() as V2CurrencyOption,
   )
@@ -133,13 +76,6 @@ const DistributionLimitHeader = ({
     MAX_DISTRIBUTION_LIMIT,
   )
   const projectLoading = distributionLimitLoading && fundingCycleLoading
-
-  const relocateToFundingDrawer = () => {
-    history.push({
-      search: '?reconfigModalOpen=true&fundingDrawerOpen=true',
-    })
-    history.go(0)
-  }
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', ...style }}>
@@ -149,29 +85,29 @@ const DistributionLimitHeader = ({
         title={false}
         active
       >
-        <b>
-          <Trans>Cycle #{fundingCycle?.number.toString()} -</Trans>{' '}
-          {distributionLimitIsInfinite ? (
-            t`No limit (infinite)`
-          ) : (
+        <TooltipLabel
+          tip={<Trans>This funding cycle's distribution limit.</Trans>}
+          label={
             <>
-              <Trans>
-                Distribution limit: <CurrencySymbol currency={currency} />
-                {formatWad(distributionLimit)}
-              </Trans>
+              {distributionLimitIsInfinite ? (
+                <Trans>No limit (infinite)</Trans>
+              ) : distributionLimit?.eq(0) ? (
+                <Trans>
+                  <strong>Zero</strong> Distribution Limit
+                </Trans>
+              ) : (
+                <Trans>
+                  <strong>
+                    <CurrencySymbol currency={currency} />
+                    {formatWad(distributionLimit)}
+                  </strong>{' '}
+                  Distribution Limit
+                </Trans>
+              )}
             </>
-          )}
-        </b>
+          }
+        />
       </Skeleton>
-      <Button
-        size="small"
-        icon={<SettingOutlined />}
-        onClick={relocateToFundingDrawer}
-      >
-        <span>
-          <Trans>Reconfigure payouts and limit</Trans>
-        </span>
-      </Button>
     </div>
   )
 }
@@ -210,19 +146,38 @@ export const EditPayoutsModal = ({
   // added with a lockedUntil
   const [editingSplits, setEditingSplits] = useState<Split[]>([])
 
+  const isLockedSplit = useCallback(
+    ({ split }: { split: Split }) => {
+      const now = new Date().valueOf() / 1000
+      // Checks if the given split exists in the projectContext splits.
+      // If it doesn't, then it means it was just added or edited is which case
+      // we want to still be able to edit it
+      const confirmedSplitsIncludesSplit =
+        contextPayoutSplits?.find(confirmedSplit =>
+          isEqual(confirmedSplit, split),
+        ) !== undefined
+      return (
+        split.lockedUntil &&
+        split.lockedUntil > now &&
+        confirmedSplitsIncludesSplit
+      )
+    },
+    [contextPayoutSplits],
+  )
+
   // Load original splits from context into editing splits.
   useEffect(() => {
     setEditingSplits(contextPayoutSplits ?? [])
   }, [contextPayoutSplits, visible])
 
   const lockedSplits = useMemo(
-    () => getLockedSplits(editingSplits),
-    [editingSplits],
+    () => editingSplits.filter(split => isLockedSplit({ split })),
+    [editingSplits, isLockedSplit],
   )
 
   const editableSplits = useMemo(
-    () => getEditableSplits(editingSplits),
-    [editingSplits],
+    () => editingSplits.filter(split => !isLockedSplit({ split })),
+    [editingSplits, isLockedSplit],
   )
 
   const [addSplitModalVisible, setAddSplitModalVisible] =
@@ -311,23 +266,43 @@ export const EditPayoutsModal = ({
       <Modal
         visible={visible}
         confirmLoading={modalLoading}
-        title="Edit payouts"
-        okText="Save payouts"
-        cancelText={modalLoading ? 'Close' : 'Cancel'}
+        title={<Trans>Edit payouts</Trans>}
+        okText={
+          <span>
+            <Trans>Save payouts</Trans>
+          </span>
+        }
+        cancelText={modalLoading ? t`Close` : t`Cancel`}
         onOk={() => onSplitsConfirmed(editingSplits)}
         onCancel={onCancel}
         width={720}
+        destroyOnClose
       >
-        <div>
-          <DescriptionParagraphOne />
-          <DescriptionParagraphTwo />
-        </div>
-        <DistributionLimitHeader style={{ marginTop: 32, marginBottom: 16 }} />
+        <Space
+          direction="vertical"
+          size="middle"
+          style={{ width: '100%', marginBottom: '2rem' }}
+        >
+          <div>
+            <Trans>
+              Reconfigure payouts as percentages of your distribution limit.
+            </Trans>
+          </div>
+          <Callout>
+            <Trans>Changes to payouts will take effect immediately.</Trans>
+          </Callout>
+        </Space>
+
         <Space
           direction="vertical"
           style={{ width: '100%', minHeight: 0 }}
-          size="large"
+          size="middle"
         >
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <DistributionLimitHeader />
+
+            <SplitCsvUpload onChange={onSplitsChanged} />
+          </div>
           <Space style={{ width: '100%' }} direction="vertical" size="small">
             {editableSplits.map((split, index) =>
               renderSplitCard(split, index),
@@ -348,6 +323,7 @@ export const EditPayoutsModal = ({
               <Trans>Sum of percentages cannot exceed 100%.</Trans>
             </span>
           )}
+
           <div
             style={{
               display: 'flex',
@@ -366,6 +342,7 @@ export const EditPayoutsModal = ({
               <Trans>Total: {totalSplitsPercentage.toFixed(2)}%</Trans>
             </div>
           </div>
+
           <Button
             type="dashed"
             onClick={() => {

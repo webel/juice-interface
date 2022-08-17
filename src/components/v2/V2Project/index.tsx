@@ -1,26 +1,33 @@
-import { RightCircleOutlined } from '@ant-design/icons'
 import { Trans } from '@lingui/macro'
 import { Col, Row, Space } from 'antd'
-import PayInputGroup from 'components/shared/inputs/Pay/PayInputGroup'
-import ProjectHeader from 'components/shared/Project/ProjectHeader'
+import PayInputGroup from 'components/inputs/Pay/PayInputGroup'
+import ProjectHeader from 'components/Project/ProjectHeader'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
+// TODO: Do we still need lazy loading?
+import VolumeChart from 'components/VolumeChart'
 
-import { lazy, useContext, useState } from 'react'
+import { useContext, useState } from 'react'
 
-import { ThemeContext } from 'contexts/themeContext'
-import useMobile from 'hooks/Mobile'
-import {
-  useHasPermission,
-  V2OperatorPermission,
-} from 'hooks/v2/contractReader/HasPermission'
+import { useV2ConnectedWalletHasPermission } from 'hooks/v2/contractReader/V2ConnectedWalletHasPermission'
+import { V2OperatorPermission } from 'models/v2/permissions'
 import useProjectQueuedFundingCycle from 'hooks/v2/contractReader/ProjectQueuedFundingCycle'
 import { useEditV2ProjectDetailsTx } from 'hooks/v2/transactor/EditV2ProjectDetailsTx'
-import { useHistory, useLocation } from 'react-router-dom'
+import { useRouter } from 'next/router'
 import { weightedAmount } from 'utils/v2/math'
 
-import { textSecondary } from 'constants/styles/text'
-import { V2_PROJECT_IDS } from '../../../constants/v2/projectIds'
-import V2BugNotice from '../shared/V2BugNotice'
+import { useIsUserAddress } from 'hooks/IsUserAddress'
+
+import { v2ProjectRoute } from 'utils/routes'
+import V2BugNotice from 'components/v2/shared/V2BugNotice'
+import { featureFlagEnabled } from 'utils/featureFlags'
+import { CurrencyContext } from 'contexts/currencyContext'
+import { CurrencyOption } from 'models/currencyOption'
+import { useCurrencyConverter } from 'hooks/CurrencyConverter'
+import { fromWad } from 'utils/formatNumber'
+import { TextButton } from 'components/TextButton'
+import useMobile from 'hooks/Mobile'
+
+import { V2_PROJECT_IDS } from 'constants/v2/projectIds'
 import { RelaunchFundingCycleBanner } from './banners/RelaunchFundingCycleBanner'
 import NewDeployModal from './NewDeployModal'
 import ProjectActivity from './ProjectActivity'
@@ -31,20 +38,20 @@ import V2ManageTokensSection from './V2ManageTokensSection'
 import V2PayButton from './V2PayButton'
 import V2ProjectHeaderActions from './V2ProjectHeaderActions'
 
+import { V2ReconfigureProjectHandleDrawer } from './V2ReconfigureProjectHandleDrawer'
+import { NftRewardsSection } from './NftRewardsSection'
+import { FEATURE_FLAGS } from 'constants/featureFlags'
+
 const GUTTER_PX = 40
 
-const VolumeChart = lazy(() => import('../../shared/VolumeChart'))
-
 const AllAssetsButton = ({ onClick }: { onClick: VoidFunction }) => {
-  const { theme } = useContext(ThemeContext)
-  const secondaryTextStyle = textSecondary(theme)
   return (
-    <span
-      style={{ ...secondaryTextStyle, cursor: 'pointer' }}
+    <TextButton
       onClick={onClick}
+      style={{ fontWeight: 400, fontSize: '0.8rem' }}
     >
-      <Trans>All assets</Trans> <RightCircleOutlined />
-    </span>
+      <Trans>All assets</Trans>
+    </TextButton>
   )
 }
 
@@ -67,10 +74,21 @@ export default function V2Project({
     cv,
     isArchived,
     projectOwnerAddress,
+    handle,
   } = useContext(V2ProjectContext)
-  const canReconfigureFundingCycles = useHasPermission(
+  const {
+    currencies: { ETH },
+  } = useContext(CurrencyContext)
+
+  const isMobile = useMobile()
+
+  const canReconfigureFundingCycles = useV2ConnectedWalletHasPermission(
     V2OperatorPermission.RECONFIGURE,
   )
+
+  const [handleModalVisible, setHandleModalVisible] = useState<boolean>()
+  const [payAmount, setPayAmount] = useState<string>('0')
+  const [payInCurrency, setPayInCurrency] = useState<CurrencyOption>(ETH)
 
   const { data: queuedFundingCycleResponse } = useProjectQueuedFundingCycle({
     projectId,
@@ -81,13 +99,16 @@ export default function V2Project({
   const editV2ProjectDetailsTx = useEditV2ProjectDetailsTx()
 
   // Checks URL to see if user was just directed from project deploy
-  const location = useLocation()
-  const params = new URLSearchParams(location.search)
-  const isNewDeploy = Boolean(params.get('newDeploy'))
-  const history = useHistory()
-  const isMobile = useMobile()
+  const router = useRouter()
+  const isNewDeploy = Boolean(router.query.newDeploy)
 
-  const hasEditPermission = useHasPermission(V2OperatorPermission.RECONFIGURE)
+  const converter = useCurrencyConverter()
+
+  const hasEditPermission = useV2ConnectedWalletHasPermission(
+    V2OperatorPermission.RECONFIGURE,
+  )
+
+  const isOwner = useIsUserAddress(projectOwnerAddress)
 
   const [newDeployModalVisible, setNewDeployModalVisible] =
     useState<boolean>(isNewDeploy)
@@ -97,12 +118,13 @@ export default function V2Project({
   const colSizeMd = singleColumnLayout ? 24 : 12
   const hasCurrentFundingCycle = fundingCycle?.number.gt(0)
   const hasQueuedFundingCycle = queuedFundingCycle?.number.gt(0)
+  const showAddHandle = isOwner && !isPreviewMode && !handle
 
   if (projectId === undefined) return null
 
   const closeNewDeployModal = () => {
     // Change URL without refreshing page
-    history.replace(`/v2/p/${projectId}`)
+    router.replace(v2ProjectRoute({ projectId }))
     setNewDeployModalVisible(false)
   }
 
@@ -117,6 +139,11 @@ export default function V2Project({
     return !hasCurrentFundingCycle
   }
 
+  const nftRewardsEnabled = featureFlagEnabled(FEATURE_FLAGS.NFT_REWARDS)
+
+  const payAmountETH =
+    payInCurrency === ETH ? payAmount : fromWad(converter.usdToWei(payAmount))
+
   return (
     <Space direction="vertical" size={GUTTER_PX} style={{ width: '100%' }}>
       {!hasCurrentFundingCycle &&
@@ -129,19 +156,28 @@ export default function V2Project({
         metadata={projectMetadata}
         actions={!isPreviewMode ? <V2ProjectHeaderActions /> : undefined}
         isArchived={isArchived}
+        handle={handle}
+        owner={projectOwnerAddress}
+        onClickSetHandle={
+          showAddHandle ? () => setHandleModalVisible(true) : undefined
+        }
       />
       {!isPreviewMode &&
         hasCurrentFundingCycle === false &&
         hasQueuedFundingCycle === false && <V2BugNotice />}
-      <Row gutter={GUTTER_PX} align="bottom">
+      <Row gutter={GUTTER_PX} align={'bottom'}>
         <Col md={colSizeMd} xs={24}>
           <TreasuryStats />
           <div style={{ textAlign: 'right' }}>
             <AllAssetsButton onClick={() => setBalancesModalVisible(true)} />
           </div>
         </Col>
-        <Col md={colSizeMd} xs={24} style={{ marginTop: GUTTER_PX }}>
+        <Col md={colSizeMd} xs={24}>
           <PayInputGroup
+            payAmountETH={payAmount}
+            onPayAmountChange={setPayAmount}
+            payInCurrency={payInCurrency}
+            onPayInCurrencyChange={setPayInCurrency}
             PayButton={V2PayButton}
             reservedRate={fundingCycleMetadata?.reservedRate.toNumber()}
             weight={fundingCycle?.weight}
@@ -150,6 +186,14 @@ export default function V2Project({
             tokenAddress={tokenAddress}
             disabled={isPreviewMode || payIsDisabledPreV2Redeploy()}
           />
+          {(isMobile && nftRewardsEnabled) || isPreviewMode ? (
+            <div style={{ marginTop: '30px' }}>
+              <NftRewardsSection
+                payAmountETH={payAmountETH}
+                onPayAmountChange={setPayAmount}
+              />
+            </div>
+          ) : null}
         </Col>
       </Row>
       <Row gutter={GUTTER_PX}>
@@ -178,7 +222,15 @@ export default function V2Project({
             xs={24}
             style={{ marginTop: isMobile ? GUTTER_PX : 0 }}
           >
-            <ProjectActivity />
+            <Space size="large" direction="vertical" style={{ width: '100%' }}>
+              {!isMobile && nftRewardsEnabled ? (
+                <NftRewardsSection
+                  payAmountETH={payAmountETH}
+                  onPayAmountChange={setPayAmount}
+                />
+              ) : null}
+              <ProjectActivity />
+            </Space>
           </Col>
         ) : null}
       </Row>
@@ -195,6 +247,12 @@ export default function V2Project({
         onCancel={() => setBalancesModalVisible(false)}
         storeCidTx={editV2ProjectDetailsTx}
       />
+      {showAddHandle && (
+        <V2ReconfigureProjectHandleDrawer
+          visible={handleModalVisible}
+          onFinish={() => setHandleModalVisible(false)}
+        />
+      )}
     </Space>
   )
 }

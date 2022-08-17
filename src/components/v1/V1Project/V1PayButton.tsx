@@ -1,14 +1,14 @@
 import { t, Trans } from '@lingui/macro'
 import { Button, Tooltip } from 'antd'
-import CurrencySymbol from 'components/shared/CurrencySymbol'
+import ETHAmount from 'components/currency/ETHAmount'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { useContext, useState } from 'react'
-import { formatWad, fromWad } from 'utils/formatNumber'
+import { fromWad } from 'utils/formatNumber'
 import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
 import useWeiConverter from 'hooks/WeiConverter'
-import PayWarningModal from 'components/shared/PayWarningModal'
+import PayWarningModal from 'components/PayWarningModal'
 import { V1CurrencyOption } from 'models/v1/currencyOption'
-import { PayButtonProps } from 'components/shared/inputs/Pay/PayInputGroup'
+import { PayButtonProps } from 'components/inputs/Pay/PayInputGroup'
 
 import { readNetwork } from 'constants/networks'
 import { disablePayOverrides } from 'constants/v1/overrides'
@@ -21,6 +21,7 @@ export default function V1PayButton({
   payInCurrency,
   onError,
   wrapperStyle,
+  disabled,
 }: PayButtonProps) {
   const { projectId, currentFC, metadata, isArchived, terminal } =
     useContext(V1ProjectContext)
@@ -59,7 +60,8 @@ export default function V1PayButton({
       isV1AndMaxRR || // v1 projects who still use 100% RR to disable pay
       currentFC.configured.eq(0) || // Edge case, see sequoiacapitaldao
       isMoonAndMaxRR || // Edge case for MoonDAO
-      isArchived) ??
+      isArchived ||
+      disabled) ??
     false
 
   let disabledMessage: string | undefined = shouldDisableButton
@@ -69,9 +71,9 @@ export default function V1PayButton({
   if (isArchived) {
     disabledMessage = t`This project is archived and can't be paid.`
   } else if (isV1AndMaxRR || isMoonAndMaxRR) {
-    disabledMessage = t`Paying this project is currently disabled, because the token reserved rate is 100% and no tokens will be earned by making a payment.`
+    disabledMessage = t`We've disabled payments because the project has opted to reserve 100% of new tokens. You would receive no tokens from your payment.`
   } else if (fcMetadata.payIsPaused) {
-    disabledMessage = t`Payments are paused for the current funding cycle.`
+    disabledMessage = t`Payments are paused in this funding cycle.`
   }
 
   const onPayButtonClick = () => {
@@ -102,9 +104,8 @@ export default function V1PayButton({
       {payInCurrency === V1_CURRENCY_USD && (
         <div style={{ fontSize: '.7rem' }}>
           <Trans>
-            Paid as <CurrencySymbol currency="ETH" />
+            Paid as <ETHAmount amount={weiPayAmt} />
           </Trans>
-          {formatWad(weiPayAmt) || '0'}
         </div>
       )}
       <PayWarningModal

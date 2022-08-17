@@ -1,16 +1,17 @@
 import { t, Trans } from '@lingui/macro'
 import { Button, Tooltip } from 'antd'
-import CurrencySymbol from 'components/shared/CurrencySymbol'
+import ETHAmount from 'components/currency/ETHAmount'
 import { useContext, useState } from 'react'
-import { formatWad } from 'utils/formatNumber'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
 import { V2_CURRENCY_USD } from 'utils/v2/currency'
-import PayWarningModal from 'components/shared/PayWarningModal'
+import PayWarningModal from 'components/PayWarningModal'
 import useWeiConverter from 'hooks/WeiConverter'
 import { V2CurrencyOption } from 'models/v2/currencyOption'
-import { PayButtonProps } from 'components/shared/inputs/Pay/PayInputGroup'
+import { PayButtonProps } from 'components/inputs/Pay/PayInputGroup'
 
-import V2ConfirmPayModal from './V2ConfirmPayModal'
+import { reloadWindow } from 'utils/windowUtils'
+
+import { V2ConfirmPayModal } from './V2ConfirmPayModal'
 
 export default function V2PayButton({
   payAmount,
@@ -41,7 +42,7 @@ export default function V2PayButton({
   if (isArchived) {
     disabledMessage = t`This project is archived and can't be paid.`
   } else if (fundingCycleMetadata.pausePay) {
-    disabledMessage = t`Payments are paused for the current funding cycle.`
+    disabledMessage = t`Payments are paused in this funding cycle.`
   }
 
   const isPayDisabled = Boolean(disabledMessage) || disabled
@@ -70,9 +71,8 @@ export default function V2PayButton({
       {payInCurrency === V2_CURRENCY_USD && (
         <div style={{ fontSize: '.7rem' }}>
           <Trans>
-            Paid as <CurrencySymbol currency="ETH" />
+            Paid as <ETHAmount amount={weiPayAmt} />
           </Trans>
-          {formatWad(weiPayAmt) || '0'}
         </div>
       )}
 
@@ -86,7 +86,7 @@ export default function V2PayButton({
       />
       <V2ConfirmPayModal
         visible={payModalVisible}
-        onSuccess={() => window.location.reload()}
+        onSuccess={reloadWindow}
         onCancel={() => setPayModalVisible(false)}
         weiAmount={weiPayAmt}
       />

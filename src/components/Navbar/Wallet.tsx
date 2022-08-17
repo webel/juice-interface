@@ -1,5 +1,5 @@
-import FormattedAddress from 'components/shared/FormattedAddress'
-import { LogoutOutlined } from '@ant-design/icons'
+import FormattedAddress from 'components/FormattedAddress'
+import { LogoutOutlined, CrownOutlined } from '@ant-design/icons'
 import { Trans } from '@lingui/macro'
 
 import { NetworkContext } from 'contexts/networkContext'
@@ -7,9 +7,10 @@ import { ThemeContext } from 'contexts/themeContext'
 import { useContext } from 'react'
 import { Dropdown, Menu } from 'antd'
 
-import EtherscanLink from 'components/shared/EtherscanLink'
-import CopyTextButton from 'components/shared/CopyTextButton'
+import EtherscanLink from 'components/EtherscanLink'
+import CopyTextButton from 'components/CopyTextButton'
 import useMobile from 'hooks/Mobile'
+import Link from 'next/link'
 
 import Balance from './Balance'
 
@@ -29,8 +30,28 @@ export default function Wallet({ userAddress }: { userAddress: string }) {
   const menu = (
     <Menu>
       <Menu.Item style={{ padding: menuItemPadding }} key={0}>
-        <EtherscanLink value={userAddress} type="address" truncated={true} />{' '}
+        <EtherscanLink
+          value={userAddress}
+          type="address"
+          truncated={true}
+          hideTooltip
+        />{' '}
         <CopyTextButton value={userAddress} style={{ zIndex: 1 }} />
+      </Menu.Item>
+      <Menu.Item
+        style={{
+          padding: menuItemPadding,
+          color: colors.text.primary,
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Link href="/projects?tab=myprojects">
+          <a>
+            <Trans>My projects</Trans>
+          </a>
+        </Link>
+        <CrownOutlined />
       </Menu.Item>
       {!isMobile && (
         <Menu.Item
@@ -53,7 +74,7 @@ export default function Wallet({ userAddress }: { userAddress: string }) {
   return (
     <Dropdown
       overlay={menu}
-      placement={!isMobile ? 'bottomRight' : 'topCenter'}
+      placement={!isMobile ? 'bottomRight' : 'top'}
       overlayStyle={{ padding: 0 }}
     >
       <div
@@ -67,10 +88,11 @@ export default function Wallet({ userAddress }: { userAddress: string }) {
           background: colors.background.l2,
           cursor: 'default',
           userSelect: 'all',
+          width: '100%',
         }}
       >
         <FormattedAddress address={userAddress} tooltipDisabled={true} />
-        <Balance address={userAddress} />
+        <Balance address={userAddress} hideTooltip />
       </div>
     </Dropdown>
   )

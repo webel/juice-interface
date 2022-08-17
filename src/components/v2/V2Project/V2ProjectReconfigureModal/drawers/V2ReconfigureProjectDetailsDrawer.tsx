@@ -3,7 +3,7 @@ import { Drawer } from 'antd'
 import { useForm } from 'antd/lib/form/Form'
 import ProjectDetailsForm, {
   ProjectDetailsFormFields,
-} from 'components/shared/forms/ProjectDetailsForm'
+} from 'components/forms/ProjectDetailsForm'
 import { ThemeContext } from 'contexts/themeContext'
 import { V2ProjectContext } from 'contexts/v2/projectContext'
 
@@ -11,6 +11,7 @@ import { useCallback, useContext, useEffect, useState } from 'react'
 
 import { uploadProjectMetadata } from 'utils/ipfs'
 import { useEditV2ProjectDetailsTx } from 'hooks/v2/transactor/EditV2ProjectDetailsTx'
+import { revalidateProject } from 'utils/revalidateProject'
 
 import { drawerStyle } from 'constants/styles/drawerStyle'
 import { PROJECT_PAY_CHARACTER_LIMIT } from 'constants/numbers'
@@ -25,7 +26,7 @@ export function V2ReconfigureProjectDetailsDrawer({
   const [projectForm] = useForm<ProjectDetailsFormFields>()
 
   const [loadingSaveChanges, setLoadingSaveChanges] = useState<boolean>()
-  const { projectMetadata } = useContext(V2ProjectContext)
+  const { projectMetadata, projectId } = useContext(V2ProjectContext)
 
   const { colors } = useContext(ThemeContext).theme
 
@@ -56,7 +57,13 @@ export function V2ReconfigureProjectDetailsDrawer({
       { cid: uploadedMetadata.IpfsHash },
       {
         onDone: () => setLoadingSaveChanges(false),
-        onConfirmed: () => {
+        onConfirmed: async () => {
+          if (projectId) {
+            await revalidateProject({
+              cv: '2',
+              projectId: String(projectId),
+            })
+          }
           if (onFinish) onFinish()
           projectForm.resetFields()
         },

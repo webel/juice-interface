@@ -2,13 +2,11 @@ import { SettingOutlined } from '@ant-design/icons'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Button, Modal, Space } from 'antd'
 import ERC20TokenBalance from 'components/v1/shared/ERC20TokenBalance'
-import { FormItems } from 'components/shared/formItems'
+import { FormItems } from 'components/formItems'
 import V1ProjectTokenBalance from 'components/v1/shared/V1ProjectTokenBalance'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
-import {
-  OperatorPermission,
-  useHasPermission,
-} from 'hooks/v1/contractReader/HasPermission'
+import { useV1ConnectedWalletHasPermission } from 'hooks/v1/contractReader/V1ConnectedWalletHasPermission'
+import { V1OperatorPermission } from 'models/v1/permissions'
 import { useSetProjectUriTx } from 'hooks/v1/transactor/SetProjectUriTx'
 import { ProjectMetadataV4 } from 'models/project-metadata'
 import { TokenRef } from 'models/token-ref'
@@ -16,6 +14,9 @@ import { useContext, useEffect, useState } from 'react'
 import { uploadProjectMetadata } from 'utils/ipfs'
 
 import { t, Trans } from '@lingui/macro'
+
+import { V1TerminalVersion } from 'models/v1/terminals'
+import { revalidateProject } from 'utils/revalidateProject'
 
 import { V1_PROJECT_IDS } from 'constants/v1/projectIds'
 
@@ -29,7 +30,7 @@ export function V1BalancesModal({
   const [editModalVisible, setEditModalVisible] = useState<boolean>()
   const [loading, setLoading] = useState<boolean>()
   const [editingTokenRefs, setEditingTokenRefs] = useState<TokenRef[]>([])
-  const { owner, metadata, handle } = useContext(V1ProjectContext)
+  const { owner, metadata, handle, cv } = useContext(V1ProjectContext)
   const setProjectUriTx = useSetProjectUriTx()
 
   useEffect(() => {
@@ -37,7 +38,9 @@ export function V1BalancesModal({
     setEditingTokenRefs(initialTokens)
   }, [metadata])
 
-  const hasEditPermission = useHasPermission([OperatorPermission.SetUri])
+  const hasEditPermission = useV1ConnectedWalletHasPermission([
+    V1OperatorPermission.SetUri,
+  ])
 
   async function updateTokenRefs() {
     if (!handle) return
@@ -60,7 +63,10 @@ export function V1BalancesModal({
     setProjectUriTx(
       { cid: uploadedMetadata.IpfsHash },
       {
-        onDone: () => {
+        onDone: async () => {
+          if (cv) {
+            await revalidateProject({ cv: cv as V1TerminalVersion, handle })
+          }
           setLoading(false)
           setEditModalVisible(false)
         },
