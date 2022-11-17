@@ -1,17 +1,21 @@
 import { FEATURE_FLAGS } from 'constants/featureFlags'
 import { readNetwork } from 'constants/networks'
+import { NetworkName } from 'models/network-name'
 
 const FEATURE_FLAG_DEFAULTS: {
-  [featureFlag: string]: { [networkName: string]: boolean }
+  [featureFlag: string]: { [networkName in NetworkName]?: boolean }
 } = {
   [FEATURE_FLAGS.NFT_REWARDS]: {
-    rinkeby: true,
+    goerli: true,
+    mainnet: true,
   },
-  [FEATURE_FLAGS.VENFT]: {
-    rinkeby: true,
+  [FEATURE_FLAGS.V3]: {
+    goerli: true,
+    mainnet: true,
   },
-  [FEATURE_FLAGS.VENFT_CREATOR]: {
-    rinkeby: true,
+  [FEATURE_FLAGS.PROJECT_CONTRACT_UPDGRADES]: {
+    goerli: true,
+    // mainnet: true,
   },
 }
 
@@ -32,25 +36,23 @@ export const disableFeatureFlag = (featureFlag: string) => {
   setFeatureFlag(featureFlag, false)
 }
 
-const featureFlagDefaultEnabled = (featureFlag: string) => {
+const featureFlagDefaultEnabled = (featureFlag: string): boolean => {
   // if default-enabled for this environment, return true
-  const defaultEnabled =
-    FEATURE_FLAG_DEFAULTS[featureFlag]?.[readNetwork.name as string]
+  const defaultEnabled = FEATURE_FLAG_DEFAULTS[featureFlag]?.[readNetwork.name]
 
-  return defaultEnabled
+  return Boolean(defaultEnabled)
 }
 
-export const featureFlagEnabled = (featureFlag: string) => {
-  // if default-enabled for this environment, return trues
+export const featureFlagEnabled = (featureFlag: string): boolean => {
+  // if default-enabled for this environment, return true
   const defaultEnabled = featureFlagDefaultEnabled(featureFlag)
 
   try {
-    if (localStorage) {
-      return JSON.parse(
-        localStorage.getItem(featureFlagKey(featureFlag)) ||
-          `${defaultEnabled}`,
-      )
-    }
+    const localStorageEnabled = localStorage
+      ? JSON.parse(localStorage.getItem(featureFlagKey(featureFlag)) || 'null')
+      : null
+
+    return localStorageEnabled ?? defaultEnabled
   } catch (e) {
     return defaultEnabled
   }

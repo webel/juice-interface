@@ -1,13 +1,13 @@
 import { Tooltip } from 'antd'
 
 import { BigNumber } from '@ethersproject/bignumber'
-import { formatWad, fromWad, parseWad } from 'utils/formatNumber'
 import { betweenZeroAndOne } from 'utils/bigNumbers'
+import { formatWad, fromWad, parseWad } from 'utils/format/formatNumber'
 
 import CurrencySymbol from '../CurrencySymbol'
 
-import ETHToUSD from './ETHToUSD'
 import { PRECISION_ETH } from 'constants/currency'
+import ETHToUSD from './ETHToUSD'
 
 const MIN_AMOUNT = parseWad(0.0001)
 
@@ -52,7 +52,7 @@ export default function ETHAmount({
             {formatWad(amount, { precision: 8 })}
           </span>
         }
-        visible={hideTooltip ? !hideTooltip : undefined}
+        open={hideTooltip ? !hideTooltip : undefined}
       >
         <CurrencySymbol currency="ETH" />
         ~0
@@ -68,7 +68,7 @@ export default function ETHAmount({
   return (
     <Tooltip
       title={<ETHToUSD ethAmount={amount} />}
-      visible={hideTooltip ? !hideTooltip : undefined}
+      open={hideTooltip ? !hideTooltip : undefined}
     >
       <CurrencySymbol currency="ETH" />
       {formattedETHAmount}

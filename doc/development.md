@@ -24,7 +24,6 @@
 
 - [Infura](https://infura.io)
 - [Piñata](https://pinata.cloud)
-- [Blocknative](https://www.blocknative.com)
 
 The following sections describe how to set up each service for local development.
 
@@ -34,8 +33,8 @@ Juicebox uses [Infura](https://infura.io) to connect to an Ethereum network (mai
 
 Take the following steps to create an Infura project for local development:
 
-1. Select **Create New Project** to begin creating a new Infura project.
-1. Select the **Ethereum** option from the **Product** dropdown.
+1. Select **Create New Key** to begin creating a new Infura project.
+1. Select the **Web 3 API** option from the **Network** dropdown.
 1. Enter a **Name** (for example, `juicebox-local`).
 1. Select **Create** to create the project.
 
@@ -43,6 +42,19 @@ Next, copy the following fields into your `.env` file:
 
 - **Project ID**. In the `.env` file, copy the **Project ID** into the `NEXT_PUBLIC_INFURA_ID` variable.
 - **Endpoint**. This is the Ethereum network that will be used for testing. If you don't know which endpoint to use, select **mainnet**. In the `.env` file, copy the network name (e.g. 'mainnet', not the url) into the `NEXT_PUBLIC_INFURA_NETWORK` variable.
+
+#### Infura IPFS gateway
+
+1. Select **Create new key** to begin creating a new Infura project.
+1. Select **IPFS** from the **NETWORK** dropdown.
+1. Enter a **Name** (for example, `juicebox-ipfs-local`).
+1. Select **Create** to create the project.
+
+Next, copy the following fields into your `.env` file:
+
+- **PROJECT ID**. In the `.env` file, copy the **Project ID** into the `INFURA_IPFS_PROJECT_ID` variable.
+- **API KEY SECRET**. In the `.env` file, copy the **API KEY SECRET** into the `INFURA_IPFS_API_SECRET` variable.
+- **DEDICATED GATEWAY SUBDOMAIN**. In the `.env` file, copy the **DEDICATED GATEWAY SUBDOMAIN** into the `NEXT_PUBLIC_INFURA_IPFS_HOSTNAME` variable *without the `https://` prefix*.
 
 ### Piñata
 
@@ -56,14 +68,7 @@ Take the following steps to set up Piñata for local development:
    - **API Key**. In the `.env` file, copy the **API Key** into the `PINATA_PINNER_KEY` variable.
    - **API Secret**. In the `.env` file, copy the **API Secret** into the `PINATA_PINNER_SECRET` variable.
 
-### Blocknative
-
-Juicebox uses [Blocknative](https://www.blocknative.com) to onboard users by enabling wallet selection, connection, wallet checks, and real-time state updates.
-
-Take the following steps to set up Blocknative for local development:
-
-1. Create a Blocknative API key ([learn more](https://docs.blocknative.com/webhook-api#setup-api-key)).
-1. Copy the API key into the `NEXT_PUBLIC_BLOCKNATIVE_API_KEY` variable of the `.env` file.
+Note: Once you pass Piñata's free tier of 1GB of storage, you'll need to get access to the premium `PINATA_PINNER_KEY` and `PINATA_PINNER_SECRET` keys. Contact the Peel team in Discord to get access. Piñata will constantly give a 429 error if the free tier of API requests has been reached.
 
 ### The Graph
 
@@ -72,7 +77,7 @@ Juicebox uses [The Graph](https://thegraph.com) to query the Ethereum network us
 Take the following steps to set up Juicebox's subgraph for local development:
 
 1. Join [Peel's discord server](https://discord.gg/akpxJZ5HKR).
-2. Go to [the dev channel](https://discord.com/channels/939317843059679252/939705688563810304) and inquire about mainnet and rinkeby subgraph URLs.
+2. Inquire about mainnet and Goerli subgraph URLs in the [`#dev` channel](https://discord.com/channels/939317843059679252/939705688563810304).
 3. Copy the URL into the `NEXT_PUBLIC_SUBGRAPH_URL` variable of the `.env` file.
 
 ## Usage
@@ -95,3 +100,31 @@ Take the following steps to set up Juicebox's subgraph for local development:
    yarn build
    yarn start
    ```
+
+## Transaction simulation
+
+In development, you can simulate transactions using [Tenderly](https://tenderly.co/). Tenderly produces a stacktrace that you can use to debug failing transactions.
+
+Set up Tenderly for your development environment using the following steps:
+
+1. Create a Tenderly account
+2. Set the following variables in your `.env` file (**without the comments**):
+
+   ```
+   # .env
+   NEXT_PUBLIC_TENDERLY_API_KEY= # your user tenderly api key
+   NEXT_PUBLIC_TENDERLY_PROJECT_NAME= # your tenderly project
+   NEXT_PUBLIC_TENDERLY_ACCOUNT=  # your user account name
+   ```
+
+3. Start your development server.
+
+   ```bash
+   yarn dev
+   ```
+
+Once set up, every transaction that you submit will be simulated using Tenderly.
+
+When a simulation fails, an error is logged to the development console. This log contains a link to the simulation in Tenderly.
+
+> Note: there is a 50 simulation per month limit per account.

@@ -1,10 +1,11 @@
-import { CloseCircleFilled } from '@ant-design/icons'
-import { FileImageOutlined } from '@ant-design/icons'
+import { CloseCircleFilled, FileImageOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
+import { PinataMetadata } from '@pinata/sdk'
 import { Button, Col, message, Row, Space, Upload } from 'antd'
 import { ThemeContext } from 'contexts/themeContext'
+import { pinFileToIpfs } from 'lib/api/ipfs'
 import { useContext, useLayoutEffect, useState } from 'react'
-import { ipfsCidUrl, pinFileToIpfs } from 'utils/ipfs'
+import { restrictedIpfsUrl } from 'utils/ipfs'
 import { emitErrorNotification } from 'utils/notifications'
 
 import ExternalLink from '../ExternalLink'
@@ -22,7 +23,7 @@ export default function ImageUploader({
   text,
 }: {
   initialUrl?: string
-  metadata?: Record<string | number, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+  metadata?: PinataMetadata
   onSuccess?: (url?: string) => void
   maxSizeKBs?: number // KB
   text?: string
@@ -33,7 +34,7 @@ export default function ImageUploader({
   const { theme } = useContext(ThemeContext)
 
   const setValue = (cid?: string) => {
-    const newUrl = cid ? ipfsCidUrl(cid) : undefined
+    const newUrl = cid ? restrictedIpfsUrl(cid) : undefined
     setUrl(newUrl)
     onSuccess && onSuccess(newUrl)
   }
@@ -108,7 +109,7 @@ export default function ImageUploader({
         {url?.length ? (
           <span
             style={{
-              fontSize: '.7rem',
+              fontSize: '0.75rem',
               wordBreak: 'break-all',
               textOverflow: 'ellipsis',
             }}

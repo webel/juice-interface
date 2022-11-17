@@ -1,27 +1,24 @@
-import { Skeleton, Tooltip } from 'antd'
-
 import { BigNumber } from '@ethersproject/bignumber'
 import * as constants from '@ethersproject/constants'
-import { ThemeContext } from 'contexts/themeContext'
-import { useProjectMetadata } from 'hooks/ProjectMetadata'
-import { Project } from 'models/subgraph-entities/vX/project'
-import { CSSProperties, useContext } from 'react'
-import { formatDate } from 'utils/formatDate'
-
-import { getTerminalVersion } from 'utils/v1/terminals'
-
-import useSubgraphQuery from 'hooks/SubgraphQuery'
 import { Trans } from '@lingui/macro'
-
+import { Skeleton, Tooltip } from 'antd'
+import { PV_V1, PV_V1_1, PV_V2 } from 'constants/pv'
+import { V1ArchivedProjectIds } from 'constants/v1/archivedProjects'
+import { V2ArchivedProjectIds } from 'constants/v2v3/archivedProjects'
+import { ThemeContext } from 'contexts/themeContext'
+import { useProjectHandleText } from 'hooks/ProjectHandleText'
+import { useProjectMetadata } from 'hooks/ProjectMetadata'
+import useSubgraphQuery from 'hooks/SubgraphQuery'
+import { Project } from 'models/subgraph-entities/vX/project'
 import Link from 'next/link'
-
-import { v2ProjectRoute } from 'utils/routes'
-
-import ProjectLogo from './ProjectLogo'
+import { CSSProperties, useContext } from 'react'
+import { formatDate } from 'utils/format/formatDate'
+import { v2v3ProjectRoute } from 'utils/routes'
+import { getTerminalVersion } from 'utils/v1/terminals'
 import ETHAmount from './currency/ETHAmount'
-import { V1ArchivedProjectIds } from '../constants/v1/archivedProjects'
 import Loading from './Loading'
-import { V2ArchivedProjectIds } from 'constants/v2/archivedProjects'
+import ProjectLogo from './ProjectLogo'
+import { ProjectVersionBadge } from './ProjectVersionBadge'
 
 export type ProjectCardProject = Pick<
   Project,
@@ -32,29 +29,44 @@ export type ProjectCardProject = Pick<
   | 'createdAt'
   | 'terminal'
   | 'projectId'
-  | 'cv'
+  | 'pv'
 >
 
-export default function ProjectCard({
-  project,
-}: {
-  project?: ProjectCardProject | BigNumber
-}) {
+const cardStyle: CSSProperties = {
+  display: 'flex',
+  position: 'relative',
+  alignItems: 'center',
+  whiteSpace: 'pre',
+  overflow: 'hidden',
+  padding: '25px 20px',
+}
+
+function ArchivedBadge() {
   const {
-    theme: { colors, radii },
+    theme: { colors },
   } = useContext(ThemeContext)
 
-  const cardStyle: CSSProperties = {
-    display: 'flex',
-    position: 'relative',
-    alignItems: 'center',
-    whiteSpace: 'pre',
-    overflow: 'hidden',
-    padding: '25px 20px',
-  }
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        padding: '2px 4px',
+        background: colors.background.l1,
+        fontSize: '0.75rem',
+        color: colors.text.tertiary,
+        fontWeight: 500,
+      }}
+    >
+      <Trans>ARCHIVED</Trans>
+    </div>
+  )
+}
 
+function useProjectCardData(project?: ProjectCardProject | BigNumber) {
   // Get ProjectCardProject object if this component was passed a projectId (bigNumber)
-  const projectQuery: ProjectCardProject[] | undefined = useSubgraphQuery(
+  const projectResponse: ProjectCardProject[] | undefined = useSubgraphQuery(
     BigNumber.isBigNumber(project)
       ? {
           entity: 'project',
@@ -66,7 +78,7 @@ export default function ProjectCard({
             'createdAt',
             'terminal',
             'projectId',
-            'cv',
+            'pv',
           ],
           where: {
             key: 'projectId',
@@ -76,44 +88,76 @@ export default function ProjectCard({
       : null,
   ).data
 
-  // Must use any to convert (ProjectCardProject | bigNumber) to ProjectCardProject
-  const projectObj: any = project // eslint-disable-line @typescript-eslint/no-explicit-any
-  let _project: ProjectCardProject
-
-  // If we were given projectId (BN) and therefore projectQuery returned something,
-  // we assign _project to that. Otherwise assign it to the initial
-  // project passed to this component which must be ProjectCardProject
-  if (projectQuery?.length) {
-    _project = projectQuery[0]
-  } else {
-    _project = projectObj
+  // If we were given projectId (BigNumber) and therefore projectResponse returned something,
+  // return the first item in the array.
+  if (projectResponse?.[0]) {
+    return projectResponse[0]
   }
 
-  const { data: metadata } = useProjectMetadata(_project?.metadataUri)
+  // Otherwise, return the given [project] argument,  which must have type ProjectCardProject.
+  return project as ProjectCardProject | undefined
+}
+
+export default function ProjectCard({
+  project,
+}: {
+  project?: ProjectCardProject | BigNumber
+}) {
+  const {
+    theme: { colors, radii },
+  } = useContext(ThemeContext)
+
+  const projectCardData = useProjectCardData(project)
+  const { data: metadata } = useProjectMetadata(projectCardData?.metadataUri)
+  const { handleText } = useProjectHandleText({
+    handle: projectCardData?.handle,
+    projectId: projectCardData?.projectId,
+  })
+  const terminalVersion = getTerminalVersion(projectCardData?.terminal)
+
+  if (!projectCardData) return null
+
   // If the total paid is greater than 0, but less than 10 ETH, show two decimal places.
   const precision =
-    _project?.totalPaid?.gt(0) && _project?.totalPaid.lt(constants.WeiPerEther)
+    projectCardData.totalPaid?.gt(0) &&
+    projectCardData.totalPaid.lt(constants.WeiPerEther)
       ? 2
       : 0
 
-  const terminalVersion = getTerminalVersion(_project?.terminal)
+  /**
+   * We need to set the `as` prop for V2V3 projects
+   * so that NextJs's prefetching works.
+   *
+   * The `href` prop will always be the project ID route,
+   * but if there is a handle, we use that as the `as` prop
+   * for pretty URLs.
+   *
+   * https://web.dev/route-prefetching-in-nextjs/
+   */
+  const projectCardHref =
+    projectCardData.pv === PV_V2
+      ? v2v3ProjectRoute({
+          projectId: projectCardData.projectId,
+        })
+      : `/p/${projectCardData.handle}`
+
+  const projectCardUrl =
+    projectCardData.pv === PV_V2
+      ? v2v3ProjectRoute({
+          projectId: projectCardData.projectId,
+          handle: projectCardData.handle,
+        })
+      : projectCardHref
 
   const isArchived =
-    ((_project.cv === '1' || _project.cv === '1.1') &&
-      V1ArchivedProjectIds.includes(_project.projectId)) ||
-    (_project.cv === '2' &&
-      V2ArchivedProjectIds.includes(_project.projectId)) ||
+    ((projectCardData.pv === PV_V1 || projectCardData.pv === PV_V1_1) &&
+      V1ArchivedProjectIds.includes(projectCardData.projectId)) ||
+    (projectCardData.pv === PV_V2 &&
+      V2ArchivedProjectIds.includes(projectCardData.projectId)) ||
     metadata?.archived
 
   return (
-    <Link
-      key={`${_project.id}_${_project.cv}`}
-      href={
-        _project.cv === '2'
-          ? v2ProjectRoute(_project)
-          : `/p/${_project?.handle}`
-      }
-    >
+    <Link href={projectCardHref} as={projectCardUrl}>
       <a>
         <div
           style={{
@@ -130,6 +174,7 @@ export default function ProjectCard({
               uri={metadata?.logoUri}
               name={metadata?.name}
               size={110}
+              projectId={projectCardData.projectId}
             />
           </div>
           <div
@@ -156,37 +201,27 @@ export default function ProjectCard({
             )}
 
             <div>
-              {_project?.handle && (
-                <span
-                  style={{
-                    color: colors.text.primary,
-                    fontWeight: 500,
-                    marginRight: 10,
-                  }}
-                >
-                  @{_project?.handle}
-                </span>
-              )}
-              <span
-                style={{
-                  color: colors.text.tertiary,
-                  fontSize: '0.7rem',
-                  fontWeight: 500,
-                }}
-              >
-                V{terminalVersion ?? _project.cv}
-              </span>
+              <span style={{ color: colors.text.primary, fontWeight: 500 }}>
+                {handleText}
+              </span>{' '}
+              <ProjectVersionBadge
+                size="small"
+                versionText={`V${terminalVersion ?? projectCardData.pv}`}
+              />
             </div>
 
             <div>
               <span style={{ color: colors.text.primary, fontWeight: 500 }}>
-                <ETHAmount amount={_project?.totalPaid} precision={precision} />{' '}
+                <ETHAmount
+                  amount={projectCardData.totalPaid}
+                  precision={precision}
+                />{' '}
               </span>
 
               <span style={{ color: colors.text.secondary }}>
                 since{' '}
-                {!!_project?.createdAt &&
-                  formatDate(_project?.createdAt * 1000, 'yyyy-MM-DD')}
+                {!!projectCardData.createdAt &&
+                  formatDate(projectCardData.createdAt * 1000, 'yyyy-MM-DD')}
               </span>
             </div>
 
@@ -205,22 +240,8 @@ export default function ProjectCard({
               </Tooltip>
             )}
           </div>
-          {isArchived && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                padding: '2px 4px',
-                background: colors.background.l1,
-                fontSize: '0.7rem',
-                color: colors.text.tertiary,
-                fontWeight: 500,
-              }}
-            >
-              <Trans>ARCHIVED</Trans>
-            </div>
-          )}
+
+          {isArchived && <ArchivedBadge />}
           {!metadata && <Loading />}
         </div>
       </a>

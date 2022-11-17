@@ -1,14 +1,22 @@
 import { ThemeContext } from 'contexts/themeContext'
-import { useContext, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
+import { ipfsToHttps, isIpfsUrl } from 'utils/ipfs'
+
+// Override select project logos.
+const IMAGE_URI_OVERRIDES: { [k: number]: string } = {
+  1: '/assets/juiceboxdao_logo.webp',
+}
 
 export default function ProjectLogo({
   uri,
   name,
   size,
+  projectId,
 }: {
   uri: string | undefined
   name: string | undefined
   size?: number
+  projectId?: number | undefined
 }) {
   const [srcLoadError, setSrcLoadError] = useState(false)
   const validImg = uri && !srcLoadError
@@ -16,6 +24,17 @@ export default function ProjectLogo({
     theme: { colors, radii },
   } = useContext(ThemeContext)
   const _size = size ?? 80
+
+  const _uri = useMemo(() => {
+    if (projectId && IMAGE_URI_OVERRIDES[projectId]) {
+      return IMAGE_URI_OVERRIDES[projectId]
+    }
+    if (!uri) return undefined
+    if (!isIpfsUrl(uri)) {
+      return uri
+    }
+    return ipfsToHttps(uri)
+  }, [uri, projectId])
 
   return (
     <div
@@ -38,9 +57,11 @@ export default function ProjectLogo({
             objectFit: 'cover',
             objectPosition: 'center',
           }}
-          src={uri}
+          src={_uri}
           alt={name + ' logo'}
           onError={() => setSrcLoadError(true)}
+          loading="lazy"
+          crossOrigin="anonymous"
         />
       ) : (
         <div

@@ -1,23 +1,23 @@
+import * as constants from '@ethersproject/constants'
 import { t, Trans } from '@lingui/macro'
 import { Form, Modal, Space } from 'antd'
 import FormattedAddress from 'components/FormattedAddress'
 import InputAccessoryButton from 'components/InputAccessoryButton'
 import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
-import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { ThemeContext } from 'contexts/themeContext'
-import * as constants from '@ethersproject/constants'
+import { V1ProjectContext } from 'contexts/v1/projectContext'
 import useUnclaimedBalanceOfUser from 'hooks/v1/contractReader/UnclaimedBalanceOfUser'
 import { useUnstakeTokensTx } from 'hooks/v1/transactor/UnstakeTokensTx'
 import { useContext, useLayoutEffect, useState } from 'react'
-import { formatWad, fromWad, parseWad } from 'utils/formatNumber'
+import { formatWad, fromWad, parseWad } from 'utils/format/formatNumber'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
 
 export default function ConfirmUnstakeTokensModal({
-  visible,
+  open,
   onCancel,
   onConfirmed,
 }: {
-  visible?: boolean
+  open?: boolean
   onCancel?: VoidFunction
   onConfirmed?: VoidFunction
 }) {
@@ -62,7 +62,7 @@ export default function ConfirmUnstakeTokensModal({
   return (
     <Modal
       title={t`Claim ${tokenTextPlural} as ERC-20 tokens`}
-      visible={visible}
+      open={open}
       onOk={unstake}
       okText={t`Claim ${tokenTextPlural}`}
       confirmLoading={loading}

@@ -1,42 +1,48 @@
 import { SettingOutlined } from '@ant-design/icons'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Button, Modal, Space } from 'antd'
-import ERC20TokenBalance from 'components/v1/shared/ERC20TokenBalance'
+import ERC20TokenBalance from 'components/ERC20TokenBalance'
 import { FormItems } from 'components/formItems'
 import V1ProjectTokenBalance from 'components/v1/shared/V1ProjectTokenBalance'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { useV1ConnectedWalletHasPermission } from 'hooks/v1/contractReader/V1ConnectedWalletHasPermission'
-import { V1OperatorPermission } from 'models/v1/permissions'
 import { useSetProjectUriTx } from 'hooks/v1/transactor/SetProjectUriTx'
-import { ProjectMetadataV4 } from 'models/project-metadata'
+import { uploadProjectMetadata } from 'lib/api/ipfs'
+import { ProjectMetadataV5 } from 'models/project-metadata'
 import { TokenRef } from 'models/token-ref'
+import { V1OperatorPermission } from 'models/v1/permissions'
 import { useContext, useEffect, useState } from 'react'
-import { uploadProjectMetadata } from 'utils/ipfs'
 
 import { t, Trans } from '@lingui/macro'
 
+import { revalidateProject } from 'lib/api/nextjs'
 import { V1TerminalVersion } from 'models/v1/terminals'
-import { revalidateProject } from 'utils/revalidateProject'
 
 import { V1_PROJECT_IDS } from 'constants/v1/projectIds'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
 
 export function V1BalancesModal({
-  visible,
+  open,
   onCancel,
 }: {
-  visible: boolean | undefined
+  open: boolean | undefined
   onCancel: () => void
 }) {
+  const { owner, handle } = useContext(V1ProjectContext)
+  const { projectMetadata, pv } = useContext(ProjectMetadataContext)
+
   const [editModalVisible, setEditModalVisible] = useState<boolean>()
   const [loading, setLoading] = useState<boolean>()
   const [editingTokenRefs, setEditingTokenRefs] = useState<TokenRef[]>([])
-  const { owner, metadata, handle, cv } = useContext(V1ProjectContext)
+
   const setProjectUriTx = useSetProjectUriTx()
 
   useEffect(() => {
-    const initialTokens = metadata?.tokens ?? [{ type: 'erc20', value: '' }]
+    const initialTokens = projectMetadata?.tokens ?? [
+      { type: 'erc20', value: '' },
+    ]
     setEditingTokenRefs(initialTokens)
-  }, [metadata])
+  }, [projectMetadata])
 
   const hasEditPermission = useV1ConnectedWalletHasPermission([
     V1OperatorPermission.SetUri,
@@ -49,7 +55,7 @@ export function V1BalancesModal({
 
     const uploadedMetadata = await uploadProjectMetadata(
       {
-        ...metadata,
+        ...projectMetadata,
         tokens: editingTokenRefs.filter(t => t.type),
       },
       handle,
@@ -64,8 +70,8 @@ export function V1BalancesModal({
       { cid: uploadedMetadata.IpfsHash },
       {
         onDone: async () => {
-          if (cv) {
-            await revalidateProject({ cv: cv as V1TerminalVersion, handle })
+          if (pv) {
+            await revalidateProject({ pv: pv as V1TerminalVersion, handle })
           }
           setLoading(false)
           setEditModalVisible(false)
@@ -76,7 +82,7 @@ export function V1BalancesModal({
 
   return (
     <Modal
-      visible={visible}
+      open={open}
       onCancel={onCancel}
       footer={
         <div
@@ -117,7 +123,7 @@ export function V1BalancesModal({
             wallet={owner}
             projectId={V1_PROJECT_IDS.JUICEBOX_DAO}
           />
-          {(metadata as ProjectMetadataV4)?.tokens?.map(t =>
+          {(projectMetadata as ProjectMetadataV5)?.tokens?.map(t =>
             t.type === 'erc20' ? (
               <ERC20TokenBalance
                 key={t.value}
@@ -136,7 +142,7 @@ export function V1BalancesModal({
 
         <Modal
           title={t`Edit tracked assets`}
-          visible={editModalVisible}
+          open={editModalVisible}
           onCancel={() => setEditModalVisible(false)}
           cancelText={t`Cancel`}
           width={600}

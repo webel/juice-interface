@@ -1,12 +1,13 @@
 import { ExclamationCircleOutlined } from '@ant-design/icons'
+import { BigNumber } from '@ethersproject/bignumber'
 import { Trans } from '@lingui/macro'
 import { Collapse, Tooltip } from 'antd'
 import CollapsePanel from 'antd/lib/collapse/CollapsePanel'
 import { ThemeContext } from 'contexts/themeContext'
-import { BigNumber } from '@ethersproject/bignumber'
+import { BallotState } from 'models/v2v3/fundingCycle'
 import { useContext } from 'react'
-import { detailedTimeUntil } from 'utils/formatTime'
-import { BallotState } from 'models/v2/fundingCycle'
+import { formatDateToUTC } from 'utils/format/formatDate'
+import { detailedTimeUntil } from 'utils/format/formatTime'
 
 import { BallotStateBadge } from './BallotStateBadge'
 
@@ -19,7 +20,6 @@ export default function FundingCycleDetailsCard({
   fundingCycleRiskCount,
   isFundingCycleRecurring,
   fundingCycleDetails,
-  expand,
   isPreviewMode,
   ballotState,
   ballotStrategyAddress,
@@ -30,7 +30,6 @@ export default function FundingCycleDetailsCard({
   fundingCycleRiskCount: number
   fundingCycleDetails: JSX.Element
   isFundingCycleRecurring: boolean
-  expand?: boolean
   isPreviewMode?: boolean
   ballotState?: BallotState
   ballotStrategyAddress?: string
@@ -58,16 +57,20 @@ export default function FundingCycleDetailsCard({
       ? detailedTimeUntil(endTimeSeconds)
       : detailedTimeUntil(fundingCycleDurationSeconds)
 
+    const fundingCycleDurationMilliseconds = endTimeSeconds.mul(1000).toNumber()
+
     return (
-      <span style={{ color: colors.text.secondary, marginLeft: 10 }}>
-        {isFundingCycleRecurring ? (
-          <Trans>
-            {formattedTimeLeft} until #{fundingCycleNumber.add(1).toString()}
-          </Trans>
-        ) : (
-          <Trans>{formattedTimeLeft} left</Trans>
-        )}
-      </span>
+      <Tooltip title={`${formatDateToUTC(fundingCycleDurationMilliseconds)}`}>
+        <span style={{ color: colors.text.secondary, marginLeft: 10 }}>
+          {isFundingCycleRecurring ? (
+            <Trans>
+              {formattedTimeLeft} until #{fundingCycleNumber.add(1).toString()}
+            </Trans>
+          ) : (
+            <Trans>{formattedTimeLeft} left</Trans>
+          )}
+        </span>
+      </Tooltip>
     )
   }
 
@@ -78,7 +81,8 @@ export default function FundingCycleDetailsCard({
         border: 'none',
       }}
       className="minimal"
-      defaultActiveKey={expand ? COLLAPSE_PANEL_KEY : undefined}
+      // expand by default in preview mode
+      defaultActiveKey={isPreviewMode ? COLLAPSE_PANEL_KEY : undefined}
     >
       <CollapsePanel
         key={COLLAPSE_PANEL_KEY}

@@ -34,26 +34,10 @@ label {
 a {
   color: var(--text-action-primary);
   font-weight: 500;
+  transition: none;
 
   &:hover {
     color: var(--text-action-highlight);
-  }
-}
-
-a.quiet {
-  color: inherit;
-  font-weight: 500;
-
-  &:hover {
-    color: var(--text-primary);
-  }
-}
-
-a.hover-action {
-  color: var(--text-primary);
-  &:hover {
-    color: var(--text-action-primary);
-    text-decoration: underline;
   }
 }
 
@@ -69,21 +53,6 @@ h4,
 h5,
 h6 {
   color: var(--text-header);
-}
-
-.clickable-border {
-  border: 1px solid var(--stroke-tertiary);
-  transition: border-color 120ms ease-out;
-
-  &:hover {
-    border: 1px solid var(--stroke-secondary);
-  }
-}
-
-.hover-opacity {
-  &:hover {
-    opacity: 0.7;
-  }
 }
 
 @media screen and (min-width: 600px) and (max-width: 1000px) {
@@ -117,7 +86,7 @@ p,
 span,
 li,
 button {
-  transition: background-color 100ms ease-in, background 100ms ease-in;
+  transition: background-color 100ms linear, background 100ms linear;
 }
 
 body,
@@ -127,4 +96,5 @@ div {
 }
 
 @import 'antd-overrides/index.scss';
-@import 'blocknative-overrides.scss';
+@import 'web3-onboard-overrides/index.scss';
+@import 'create/index.scss';

@@ -1,7 +1,7 @@
 import { CheckCircleFilled, LoadingOutlined } from '@ant-design/icons'
+import * as constants from '@ethersproject/constants'
 import { Input } from 'antd'
 import { ThemeContext } from 'contexts/themeContext'
-import * as constants from '@ethersproject/constants'
 import { isAddress } from 'ethers/lib/utils'
 import { useContext, useState } from 'react'
 
@@ -11,8 +11,10 @@ const isENS = (address = '') => address.endsWith('.eth')
 
 export function EthAddressInput({
   value,
+  placeholder = `juicebox.eth / ${constants.AddressZero}`,
   onChange,
 }: {
+  placeholder?: string
   value?: string
   onChange?: (value: string) => void
 }) {
@@ -87,14 +89,14 @@ export function EthAddressInput({
         allowClear={true}
         type="text"
         spellCheck={false}
-        placeholder={`juicebox.eth / ${constants.AddressZero}`}
+        placeholder={placeholder}
         value={ensName ?? value}
         suffix={loadingENSName ? <LoadingOutlined spin /> : null}
         disabled={loadingENSName}
         onChange={onInputChange}
       />
       {extraText ? (
-        <div style={{ fontSize: '0.7rem', color: colors.text.secondary }}>
+        <div style={{ fontSize: '0.75rem', color: colors.text.secondary }}>
           <CheckCircleFilled /> {extraText}
         </div>
       ) : null}

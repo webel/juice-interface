@@ -1,10 +1,20 @@
-import { DeleteOutlined, LockOutlined } from '@ant-design/icons'
+import {
+  DeleteOutlined,
+  LockOutlined,
+  PlusCircleOutlined,
+} from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
-
 import { Button, Col, Form, Row, Space, Tooltip } from 'antd'
-
 import { useForm } from 'antd/lib/form/Form'
+import FormattedAddress from 'components/FormattedAddress'
+import {
+  validateEthAddress,
+  validatePercentage,
+} from 'components/formItems/formHelpers'
+import { FormItemExt } from 'components/formItems/formItemExt'
+import ReservedTokenReceiverModal from 'components/modals/ReservedTokenReceiverModal'
 import { ThemeContext } from 'contexts/themeContext'
+import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { TicketMod } from 'models/mods'
 import * as moment from 'moment'
 import {
@@ -14,21 +24,14 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { formatDate } from 'utils/formatDate'
-import { permyriadToPercent, percentToPermyriad } from 'utils/formatNumber'
-
-import { V1ProjectContext } from 'contexts/v1/projectContext'
-
-import ReservedTokenReceiverModal from 'components/modals/ReservedTokenReceiverModal'
+import { formatDate } from 'utils/format/formatDate'
 import {
-  validateEthAddress,
-  validatePercentage,
-} from 'components/formItems/formHelpers'
-
-import FormattedAddress from 'components/FormattedAddress'
-import { FormItemExt } from 'components/formItems/formItemExt'
+  percentToPermyriad,
+  permyriadToPercent,
+} from 'utils/format/formatNumber'
 
 type ModalMode = 'Add' | 'Edit' | undefined
+const gutter = 10
 
 export default function ProjectTicketMods({
   name,
@@ -45,6 +48,11 @@ export default function ProjectTicketMods({
   style?: CSSProperties
   onModsChanged: (mods: TicketMod[]) => void
 } & FormItemExt) {
+  const { owner } = useContext(V1ProjectContext)
+  const {
+    theme: { colors, radii },
+  } = useContext(ThemeContext)
+
   const [form] = useForm<{
     beneficiary: string
     percent: number
@@ -52,13 +60,6 @@ export default function ProjectTicketMods({
   }>()
   const [editingModIndex, setEditingModIndex] = useState<number>() // index of the mod currently being edited (edit modal open)
   const [modalMode, setModalMode] = useState<ModalMode>() //either 'Add', 'Edit' or undefined
-  const { owner } = useContext(V1ProjectContext)
-
-  const {
-    theme: { colors, radii },
-  } = useContext(ThemeContext)
-
-  const gutter = 10
 
   const modInput = useCallback(
     (mod: TicketMod, index: number, locked?: boolean) => {
@@ -69,12 +70,11 @@ export default function ProjectTicketMods({
           style={{
             display: 'flex',
             padding: 10,
-            border:
-              '1px solid ' +
-              (locked ? colors.stroke.disabled : colors.stroke.tertiary),
+            border: locked ? '1px solid ' + colors.stroke.disabled : undefined,
             borderRadius: radii.md,
           }}
           key={mod.beneficiary ?? '' + index}
+          className="clickable-border"
         >
           <Space
             direction="vertical"
@@ -179,7 +179,6 @@ export default function ProjectTicketMods({
     [
       mods,
       colors.stroke.disabled,
-      colors.stroke.tertiary,
       colors.text.primary,
       colors.icon.disabled,
       radii.md,
@@ -319,12 +318,15 @@ export default function ProjectTicketMods({
             form.resetFields()
           }}
           block
+          icon={<PlusCircleOutlined />}
         >
-          <Trans>Add token allocation</Trans>
+          <span>
+            <Trans>Add token allocation</Trans>
+          </span>
         </Button>
       </Space>
       <ReservedTokenReceiverModal
-        visible={editingModIndex !== undefined}
+        open={editingModIndex !== undefined}
         onOk={setReceiver}
         mode={modalMode}
         form={form}

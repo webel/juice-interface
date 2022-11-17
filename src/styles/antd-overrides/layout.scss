@@ -1,17 +1,18 @@
-.ant-menu,
-.ant-menu-item,
-.ant-menu-item > a {
-  color: var(--text-primary) !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
 .ant-layout-header {
   color: var(--text-primary);
-  z-index: 99;
+  z-index: 10;
 }
 
 .ant-divider {
-  border-color: var(--stroke-tertiary)
+  border-color: var(--stroke-tertiary);
+}
+
+.ant-layout-sider-zero-width-trigger {
+  color: var(--text-primary);
+  background-color: var(--background-l0);
+}
+
+.settings-layout .ant-layout-sider-zero-width-trigger {
+  top: -3px;
+  font-size: 1.5rem;
 }

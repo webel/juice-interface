@@ -2,30 +2,21 @@ import { Trans } from '@lingui/macro'
 import ETHAmount from 'components/currency/ETHAmount'
 import EtherscanLink from 'components/EtherscanLink'
 import FormattedAddress from 'components/FormattedAddress'
+import { ProjectVersionBadge } from 'components/ProjectVersionBadge'
 import RichNote from 'components/RichNote'
 import { ThemeContext } from 'contexts/themeContext'
-import { V1ProjectContext } from 'contexts/v1/projectContext'
+import { useV2V3TerminalVersion } from 'hooks/V2V3TerminalVersion'
 import { PayEvent } from 'models/subgraph-entities/vX/pay-event'
-import { useCallback, useContext } from 'react'
-import { formatHistoricalDate } from 'utils/formatDate'
+import { useContext } from 'react'
+import { formatHistoricalDate } from 'utils/format/formatDate'
 
-import V2ProjectHandle from '../v2/shared/V2ProjectHandle'
+import V2V3ProjectHandleLink from '../v2v3/shared/V2V3ProjectHandleLink'
 
 import {
   contentLineHeight,
   primaryContentFontSize,
   smallHeaderStyle,
 } from './styles'
-
-// Maps a project id to an internal map of payment event overrides.
-const payEventOverrides = new Map<number, Map<string, string>>([
-  [
-    10,
-    new Map<string, string>([
-      ['Minted WikiToken for Page ID', 'WikiToken minted'],
-    ]),
-  ],
-])
 
 export default function PayEventElem({
   event,
@@ -40,37 +31,15 @@ export default function PayEventElem({
         | 'id'
         | 'txHash'
         | 'feeFromV2Project'
+        | 'terminal'
       >
     | undefined
 }) {
-  const { projectId } = useContext(V1ProjectContext)
-
   const {
     theme: { colors },
   } = useContext(ThemeContext)
 
-  const usePayEventOverrides = projectId && payEventOverrides.has(projectId)
-
-  const formatPayEventOverride = useCallback(
-    (e: Partial<PayEvent>) => {
-      if (!projectId) {
-        return e.note
-      }
-
-      let override
-      payEventOverrides
-        .get(projectId)
-        ?.forEach((value: string, key: string) => {
-          if (e.note?.includes(key)) {
-            override = value
-            return
-          }
-        })
-
-      return override ? override : e.note
-    },
-    [projectId],
-  )
+  const terminalVersion = useV2V3TerminalVersion(event?.terminal)
 
   if (!event) return null
 
@@ -98,19 +67,26 @@ export default function PayEventElem({
         </div>
 
         <div style={{ textAlign: 'right' }}>
-          {event.timestamp && (
-            <div style={smallHeaderStyle(colors)}>
-              {formatHistoricalDate(event.timestamp * 1000)}{' '}
-              <EtherscanLink value={event.txHash} type="tx" />
-            </div>
-          )}
+          <div style={smallHeaderStyle(colors)}>
+            {terminalVersion && (
+              <ProjectVersionBadge
+                style={{ padding: 0, background: 'transparent' }}
+                versionText={'V' + terminalVersion}
+              />
+            )}{' '}
+            {event.timestamp && formatHistoricalDate(event.timestamp * 1000)}{' '}
+            <EtherscanLink value={event.txHash} type="tx" />
+          </div>
           <div
             style={{
               ...smallHeaderStyle(colors),
               lineHeight: contentLineHeight,
             }}
           >
-            <FormattedAddress address={event.beneficiary} />
+            <FormattedAddress
+              address={event.beneficiary}
+              style={{ fontWeight: 400 }}
+            />
           </div>
         </div>
       </div>
@@ -120,18 +96,14 @@ export default function PayEventElem({
           <Trans>
             Fee from{' '}
             <span>
-              <V2ProjectHandle projectId={event.feeFromV2Project} />
+              <V2V3ProjectHandleLink projectId={event.feeFromV2Project} />
             </span>
           </Trans>
         </div>
       ) : (
         <div style={{ marginTop: 5 }}>
           <RichNote
-            note={
-              (usePayEventOverrides
-                ? formatPayEventOverride(event)
-                : event.note) ?? ''
-            }
+            note={event.note ?? ''}
             style={{ color: colors.text.secondary }}
           />
         </div>

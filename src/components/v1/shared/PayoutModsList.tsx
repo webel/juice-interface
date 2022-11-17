@@ -5,27 +5,36 @@ import CurrencySymbol from 'components/CurrencySymbol'
 import { getTotalPercentage } from 'components/formItems/formHelpers'
 import Mod from 'components/v1/shared/Mod'
 
-import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { BigNumber } from '@ethersproject/bignumber'
 import * as constants from '@ethersproject/constants'
+import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { useV1ConnectedWalletHasPermission } from 'hooks/v1/contractReader/V1ConnectedWalletHasPermission'
-import { V1OperatorPermission } from 'models/v1/permissions'
 import { useSetPayoutModsTx } from 'hooks/v1/transactor/SetPayoutModsTx'
+import { PayoutMod } from 'models/mods'
 import { V1CurrencyOption } from 'models/v1/currencyOption'
 import { V1FundingCycle } from 'models/v1/fundingCycle'
-import { PayoutMod } from 'models/mods'
-import { useContext, useLayoutEffect, useMemo, useState } from 'react'
+import { V1OperatorPermission } from 'models/v1/permissions'
+import {
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   formatWad,
-  permyriadToPercent,
   fromWad,
   perbicentToPercent,
-} from 'utils/formatNumber'
-import { amountSubFee } from 'utils/math'
+  permyriadToPercent,
+} from 'utils/format/formatNumber'
+import { amountSubFee } from 'utils/v1/math'
 
 import { V1CurrencyName } from 'utils/v1/currency'
 
+import { CsvUpload } from 'components/CsvUpload/CsvUpload'
 import { V1_CURRENCY_ETH } from 'constants/v1/currency'
+import { parseV1PayoutModsCsv } from 'utils/csv'
+import { MODS_TOTAL_PERCENT } from 'utils/v1/mods'
 import ProjectPayoutMods from './ProjectPayMods/ProjectPayoutMods'
 
 export default function PayoutModsList({
@@ -90,8 +99,15 @@ export default function PayoutModsList({
     )
   }
 
+  const onModsChanged = useCallback(
+    (newMods: PayoutMod[]) => {
+      setEditingMods(newMods)
+    },
+    [setEditingMods],
+  )
+
   const modsTotal = mods?.reduce((acc, curr) => acc + curr.percent, 0)
-  const ownerPercent = 10000 - (modsTotal ?? 0)
+  const ownerPercent = MODS_TOTAL_PERCENT - (modsTotal ?? 0)
 
   const baseTotal = total ?? amountSubFee(fundingCycle?.target, feePerbicent)
 
@@ -184,7 +200,7 @@ export default function PayoutModsList({
           }}
         >
           <Modal
-            visible={modalVisible}
+            open={modalVisible}
             title={<Trans>Edit payouts</Trans>}
             okText={
               <span>
@@ -209,6 +225,14 @@ export default function PayoutModsList({
                 By default, all unallocated funds can be distributed to the
                 project owner's wallet.
               </p>
+            </div>
+
+            <div style={{ textAlign: 'right' }}>
+              <CsvUpload
+                onChange={onModsChanged}
+                templateUrl={'/assets/csv/v1-payouts-template.csv'}
+                parser={parseV1PayoutModsCsv}
+              />
             </div>
 
             <Form.Item

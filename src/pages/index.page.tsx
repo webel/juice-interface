@@ -1,30 +1,26 @@
 import { t, Trans } from '@lingui/macro'
 import { Button, Col, Row, Space } from 'antd'
-import FeedbackFormButton from 'components/FeedbackFormButton'
 import { AppWrapper } from 'components/common'
-
+import { ThemeOption } from 'constants/theme/theme-option'
 import { ThemeContext } from 'contexts/themeContext'
-import { CSSProperties, useContext } from 'react'
 import useMobile from 'hooks/Mobile'
 import { fathom } from 'lib/fathom'
-
-import { ThemeOption } from 'constants/theme/theme-option'
-
+import Image from 'next/image'
+import Link from 'next/link'
+import { CSSProperties, useContext } from 'react'
 import Faq from './home/Faq'
 import Footer from './home/Footer'
-import TrendingSection from './home/TrendingSection'
-import { TopProjectsSection } from './home/TopProjectsSection'
-import { StatsSection } from './home/StatsSection'
 import { HowItWorksSection } from './home/HowItWorksSection'
+import { StatsSection } from './home/StatsSection'
 import { HeroHeading, HeroSubheading } from './home/strings'
-
-export default function LandingPage() {
-  return (
-    <AppWrapper>
-      <Landing />
-    </AppWrapper>
-  )
-}
+import { TopProjectsSection } from './home/TopProjectsSection'
+import TrendingSection from './home/TrendingSection'
+import bananaOd from '/public/assets/banana-od.webp'
+import bananaOl from '/public/assets/banana-ol.webp'
+import blueBerry from '/public/assets/blueberry-ol.png'
+import bolt from '/public/assets/icons/bolt.svg'
+import orangeLadyOd from '/public/assets/orange_lady-od.png'
+import orangeLadyOl from '/public/assets/orange_lady-ol.png'
 
 const BigHeader = ({
   text,
@@ -48,69 +44,53 @@ const BigHeader = ({
   )
 }
 
-function Landing() {
-  const { theme, forThemeOption } = useContext(ThemeContext)
-  const colors = theme.colors
-  const isMobile = useMobile()
-
-  const totalMaxWidth = 1080
-
-  const wrapper: CSSProperties = {
-    maxWidth: totalMaxWidth,
-    margin: '0 auto',
-  }
-
-  const BuiltForList = () => (
-    <div
+const BuiltForList = () => (
+  <div
+    style={{
+      display: 'grid',
+      gridAutoFlow: 'row',
+      rowGap: 8,
+      fontWeight: 500,
+    }}
+  >
+    <p
       style={{
-        display: 'grid',
-        gridAutoFlow: 'row',
-        rowGap: 8,
-        fontWeight: 500,
+        marginBottom: 4,
       }}
     >
-      <p
-        style={{
-          marginBottom: 4,
-        }}
-      >
-        <Trans>Built for:</Trans>
-      </p>
-      {[
-        t`DAOs`,
-        t`Crowdfunding`,
-        t`NFT projects`,
-        t`Indie creators and builders`,
-      ].map((data, i) => (
-        <Space
-          style={{ fontStyle: 'italic', paddingLeft: 8 }}
-          key={i}
-          size="middle"
-        >
-          <img src="/assets/bolt.svg" alt="⚡️" />
-          {data}
-        </Space>
-      ))}
-    </div>
-  )
+      <Trans>Built for:</Trans>
+    </p>
+    {[
+      t`DAOs`,
+      t`Crowdfunding`,
+      t`NFT projects`,
+      t`Indie creators and builders`,
+    ].map((data, i) => (
+      <Space style={{ paddingLeft: 8 }} key={i} size="middle">
+        <Image src={bolt} alt="⚡️" />
+        {data}
+      </Space>
+    ))}
+  </div>
+)
 
-  const CallToAction = () => {
-    const isMobile = useMobile()
+const CallToAction = () => {
+  const isMobile = useMobile()
 
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 8,
-          flexDirection: isMobile ? 'column' : 'row',
-        }}
-      >
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 8,
+        flexDirection: isMobile ? 'column' : 'row',
+      }}
+    >
+      <Link href="/create">
         <Button
           type="primary"
           size="large"
           block={isMobile}
-          href={'/create'}
           onClick={() => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ;(fathom as any)?.trackGoal('IIYVJKNC', 0)
@@ -122,11 +102,25 @@ function Landing() {
         >
           <Trans>Launch your project</Trans>
         </Button>
-        <Button size="large" block={isMobile} href="/projects">
-          <Trans>Explore projects</Trans>
-        </Button>
-      </div>
-    )
+      </Link>
+      <Button size="large" block={isMobile} href="/projects">
+        <Trans>Explore projects</Trans>
+      </Button>
+    </div>
+  )
+}
+
+const totalMaxWidth = 1080
+
+function Landing() {
+  const { theme, forThemeOption } = useContext(ThemeContext)
+  const colors = theme.colors
+
+  const isMobile = useMobile()
+
+  const wrapper: CSSProperties = {
+    maxWidth: totalMaxWidth,
+    margin: '0 auto',
   }
 
   return (
@@ -179,23 +173,13 @@ function Landing() {
             </Col>
 
             <Col xs={24} md={11}>
-              <img
+              <Image
                 className="hide-mobile"
-                style={{
-                  minHeight: 300,
-                  width: '100%',
-                  maxWidth: '50vw',
-                  objectFit: 'contain',
-                }}
-                src={
-                  forThemeOption &&
-                  forThemeOption({
-                    [ThemeOption.dark]: '/assets/banana-od.png',
-                    [ThemeOption.light]: '/assets/banana-ol.png',
-                  })
-                }
+                src={forThemeOption?.({
+                  [ThemeOption.dark]: bananaOd,
+                  [ThemeOption.light]: bananaOl,
+                })}
                 alt="Chill banana drinking juice"
-                loading="lazy"
               />
             </Col>
           </Row>
@@ -247,9 +231,8 @@ function Landing() {
             </Col>
 
             <Col xs={24} md={10}>
-              <img
-                style={{ maxWidth: '100%' }}
-                src="/assets/blueberry-ol.png"
+              <Image
+                src={blueBerry}
                 alt="Sexy blueberry with bright pink lipstick spraying a can of spraypaint"
                 loading="lazy"
               />
@@ -285,25 +268,14 @@ function Landing() {
         style={{
           display: 'flex',
           justifyContent: 'center',
+          marginBottom: -12,
         }}
       >
-        <img
-          style={{
-            height: '40vh',
-            maxHeight: 400,
-            minHeight: 300,
-            maxWidth: '100%',
-            objectFit: 'contain',
-            objectPosition: 'center',
-            marginBottom: -10,
-          }}
-          src={
-            forThemeOption &&
-            forThemeOption({
-              [ThemeOption.dark]: '/assets/orange_lady-od.png',
-              [ThemeOption.light]: '/assets/orange_lady-ol.png',
-            })
-          }
+        <Image
+          src={forThemeOption?.({
+            [ThemeOption.dark]: orangeLadyOd,
+            [ThemeOption.light]: orangeLadyOl,
+          })}
           alt="Powerlifting orange hitting an olympic deadlift"
           loading="lazy"
         />
@@ -324,8 +296,15 @@ function Landing() {
           </Trans>
         </p>
       </div>
-      <FeedbackFormButton />
       <Footer />
     </div>
+  )
+}
+
+export default function LandingPage() {
+  return (
+    <AppWrapper>
+      <Landing />
+    </AppWrapper>
   )
 }

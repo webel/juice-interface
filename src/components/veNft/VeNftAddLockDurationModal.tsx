@@ -10,11 +10,11 @@ export type FormFields = {
 }
 
 export default function VeNftAddLockDurationModal({
-  visible,
+  open,
   onClose,
   onChange,
 }: {
-  visible: boolean
+  open: boolean
   onClose: VoidFunction
   onChange: (lockDurationOption: number) => void
 }) {
@@ -33,25 +33,19 @@ export default function VeNftAddLockDurationModal({
 
   return (
     <Modal
-      visible={visible}
+      open={open}
       okText={t`Save Option`}
       onOk={onFormSaved}
       onCancel={onClose}
       title={t`Add Lock Duration Option`}
     >
       <Form layout="vertical" form={nftForm}>
-        <Form.Item name="lockDuration" required={true}>
-          <FormattedNumberInput
-            suffix={t` days`}
-            min={1}
-            onChange={val => {
-              nftForm.setFieldsValue({ lockDuration: val })
-            }}
-            formItemProps={{
-              required: true,
-              label: <Trans>Days to lock tokens</Trans>,
-            }}
-          />
+        <Form.Item
+          name="lockDuration"
+          required
+          label={<Trans>Days to lock tokens</Trans>}
+        >
+          <FormattedNumberInput suffix={t` days`} min={1} />
         </Form.Item>
       </Form>
     </Modal>

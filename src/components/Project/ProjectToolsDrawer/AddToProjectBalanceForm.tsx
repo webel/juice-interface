@@ -1,13 +1,14 @@
+import { BigNumber } from '@ethersproject/bignumber'
 import { Trans } from '@lingui/macro'
 import { Form } from 'antd'
 import InputAccessoryButton from 'components/InputAccessoryButton'
 import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
 import TransactorButton from 'components/TransactorButton'
-import { NetworkContext } from 'contexts/networkContext'
-import { BigNumber } from '@ethersproject/bignumber'
 import { TransactorInstance } from 'hooks/Transactor'
-import { useContext, useState } from 'react'
-import { parseWad } from 'utils/formatNumber'
+import { useWallet } from 'hooks/Wallet'
+import { useState } from 'react'
+import { parseWad } from 'utils/format/formatNumber'
+import { emitErrorNotification } from 'utils/notifications'
 
 export function AddToProjectBalanceForm({
   useAddToBalanceTx,
@@ -16,17 +17,17 @@ export function AddToProjectBalanceForm({
     value: BigNumber
   }>
 }) {
-  const { userAddress } = useContext(NetworkContext)
+  const { userAddress } = useWallet()
 
   const [addToBalanceForm] = Form.useForm<{ amount: string }>()
   const [loadingAddToBalance, setLoadingAddToBalance] = useState<boolean>()
 
   const addToBalanceTx = useAddToBalanceTx()
 
-  function addToBalance() {
+  async function addToBalance() {
     setLoadingAddToBalance(true)
 
-    addToBalanceTx(
+    const result = await addToBalanceTx(
       { value: parseWad(addToBalanceForm.getFieldValue('amount')) },
       {
         onConfirmed: () => {
@@ -36,8 +37,17 @@ export function AddToProjectBalanceForm({
         onDone: () => {
           setLoadingAddToBalance(false)
         },
+        onError: e => {
+          setLoadingAddToBalance(false)
+          addToBalanceForm.resetFields()
+          emitErrorNotification(e.message)
+        },
       },
     )
+
+    if (!result) {
+      setLoadingAddToBalance(false)
+    }
   }
 
   return (
@@ -54,11 +64,6 @@ export function AddToProjectBalanceForm({
       <Form.Item name="amount" label={<Trans>Pay amount</Trans>}>
         <FormattedNumberInput
           placeholder="0"
-          onChange={amount =>
-            addToBalanceForm.setFieldsValue({
-              amount,
-            })
-          }
           accessory={<InputAccessoryButton content="ETH" />}
         />
       </Form.Item>

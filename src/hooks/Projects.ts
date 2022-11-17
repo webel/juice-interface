@@ -1,5 +1,8 @@
-import { CV } from 'models/cv'
+import { PV_V1, PV_V2 } from 'constants/pv'
+import { V1ArchivedProjectIds } from 'constants/v1/archivedProjects'
+import { V2ArchivedProjectIds } from 'constants/v2v3/archivedProjects'
 import { ProjectState } from 'models/project-visibility'
+import { PV } from 'models/pv'
 import { Project } from 'models/subgraph-entities/vX/project'
 import { V1TerminalVersion } from 'models/v1/terminals'
 import { useEffect, useState } from 'react'
@@ -13,9 +16,6 @@ import {
 } from 'utils/graph'
 import { getTerminalAddress } from 'utils/v1/terminals'
 
-import { V1ArchivedProjectIds } from 'constants/v1/archivedProjects'
-import { V2ArchivedProjectIds } from 'constants/v2/archivedProjects'
-
 import useSubgraphQuery, { useInfiniteSubgraphQuery } from './SubgraphQuery'
 
 interface ProjectsOptions {
@@ -27,12 +27,11 @@ interface ProjectsOptions {
   state?: ProjectState
   keys?: (keyof Project)[]
   terminalVersion?: V1TerminalVersion
-  cv?: CV[]
+  pv?: PV[]
 }
 
-const staleTime = 60 * 1000 // 60 seconds
-
-const keys: (keyof Project)[] = [
+const DEFAULT_STALE_TIME = 60 * 1000 // 60 seconds
+const DEFAULT_ENTITY_KEYS: (keyof Project)[] = [
   'id',
   'projectId',
   'handle',
@@ -44,7 +43,17 @@ const keys: (keyof Project)[] = [
   'totalPaid',
   'totalRedeemed',
   'terminal',
-  'cv',
+  'pv',
+]
+const V1_ARCHIVED_SUBGRAPH_IDS = V1ArchivedProjectIds.map(projectId =>
+  getSubgraphIdForProject(PV_V1, projectId),
+)
+const V2_ARCHIVED_SUBGRAPH_IDS = V2ArchivedProjectIds.map(projectId =>
+  getSubgraphIdForProject(PV_V2, projectId),
+)
+const ARCHIVED_SUBGRAPH_IDS = [
+  ...V1_ARCHIVED_SUBGRAPH_IDS,
+  ...V2_ARCHIVED_SUBGRAPH_IDS,
 ]
 
 const queryOpts = (
@@ -56,13 +65,6 @@ const queryOpts = (
   const where: WhereConfig<'project'>[] = []
 
   const terminalAddress = getTerminalAddress(opts.terminalVersion)
-  const V1ArchivedProjectKeys = V1ArchivedProjectIds.map(projectId =>
-    getSubgraphIdForProject('1', projectId),
-  )
-  const V2ArchivedProjectKeys = V2ArchivedProjectIds.map(projectId =>
-    getSubgraphIdForProject('2', projectId),
-  )
-  const archivedKeys = [...V1ArchivedProjectKeys, ...V2ArchivedProjectKeys]
 
   if (terminalAddress) {
     where.push({
@@ -71,10 +73,10 @@ const queryOpts = (
     })
   }
 
-  if (opts.cv) {
+  if (opts.pv) {
     where.push({
-      key: 'cv',
-      value: opts.cv,
+      key: 'pv',
+      value: opts.pv,
       operator: 'in',
     })
   }
@@ -87,20 +89,20 @@ const queryOpts = (
   } else if (opts.state === 'archived') {
     where.push({
       key: 'id',
-      value: archivedKeys,
+      value: ARCHIVED_SUBGRAPH_IDS,
       operator: 'in',
     })
-  } else if (archivedKeys.length) {
+  } else if (ARCHIVED_SUBGRAPH_IDS.length) {
     where.push({
       key: 'id',
-      value: archivedKeys,
+      value: ARCHIVED_SUBGRAPH_IDS,
       operator: 'not_in',
     })
   }
 
   return {
     entity: 'project',
-    keys: opts.keys ?? keys,
+    keys: opts.keys ?? DEFAULT_ENTITY_KEYS,
     orderDirection: opts.orderDirection ?? 'desc',
     orderBy: opts.orderBy ?? 'totalPaid',
     pageSize: opts.pageSize,
@@ -119,7 +121,7 @@ export function useProjectsQuery(opts: ProjectsOptions) {
           : undefined,
     },
     {
-      staleTime,
+      staleTime: DEFAULT_STALE_TIME,
     },
   )
 }
@@ -130,20 +132,30 @@ export function useProjectsSearch(handle: string | undefined) {
       ? {
           text: `${handle}:*`,
           entity: 'projectSearch',
-          keys,
+          keys: DEFAULT_ENTITY_KEYS,
         }
       : null,
     {
-      staleTime,
+      staleTime: DEFAULT_STALE_TIME,
     },
   )
 }
 
 export function useTrendingProjects(count: number) {
+  const whereQuery: WhereConfig<'project'>[] = []
+
+  if (ARCHIVED_SUBGRAPH_IDS.length) {
+    whereQuery.push({
+      key: 'id',
+      value: ARCHIVED_SUBGRAPH_IDS,
+      operator: 'not_in',
+    })
+  }
+
   return useSubgraphQuery({
     entity: 'project',
     keys: [
-      ...keys,
+      ...DEFAULT_ENTITY_KEYS,
       'trendingScore',
       'trendingPaymentsCount',
       'trendingVolume',
@@ -152,6 +164,7 @@ export function useTrendingProjects(count: number) {
     first: count,
     orderBy: 'trendingScore',
     orderDirection: 'desc',
+    where: whereQuery,
   })
 }
 
@@ -214,7 +227,7 @@ export function useHoldingsProjectsQuery(wallet: string | undefined) {
     projectIds
       ? {
           entity: 'project',
-          keys,
+          keys: DEFAULT_ENTITY_KEYS,
           where: {
             key: 'id',
             operator: 'in',
@@ -235,12 +248,14 @@ export function useMyProjectsQuery(wallet: string | undefined) {
     wallet
       ? {
           entity: 'project',
-          keys,
+          keys: DEFAULT_ENTITY_KEYS,
           where: {
             key: 'owner',
             operator: 'in',
             value: [wallet],
           },
+          orderBy: 'createdAt',
+          orderDirection: 'desc',
         }
       : null,
   )
@@ -253,6 +268,6 @@ export function useMyProjectsQuery(wallet: string | undefined) {
 export function useInfiniteProjectsQuery(opts: ProjectsOptions) {
   return useInfiniteSubgraphQuery(
     queryOpts(opts) as InfiniteGraphQueryOpts<'project', EntityKeys<'project'>>,
-    { staleTime },
+    { staleTime: DEFAULT_STALE_TIME },
   )
 }

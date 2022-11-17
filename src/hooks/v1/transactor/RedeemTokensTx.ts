@@ -1,10 +1,13 @@
-import { NetworkContext } from 'contexts/networkContext'
+import { BigNumber } from '@ethersproject/bignumber'
+import { t } from '@lingui/macro'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { V1UserContext } from 'contexts/v1/userContext'
-import { BigNumber } from '@ethersproject/bignumber'
+import { useWallet } from 'hooks/Wallet'
 import { useContext } from 'react'
 
-import { TransactorInstance } from '../../Transactor'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import { TransactorInstance } from 'hooks/Transactor'
+import { tokenSymbolText } from 'utils/tokenSymbolText'
 
 export function useRedeemTokensTx(): TransactorInstance<{
   redeemAmount: BigNumber
@@ -12,8 +15,10 @@ export function useRedeemTokensTx(): TransactorInstance<{
   preferConverted: boolean
 }> {
   const { transactor, contracts } = useContext(V1UserContext)
-  const { userAddress } = useContext(NetworkContext)
-  const { projectId, terminal } = useContext(V1ProjectContext)
+  const { terminal, tokenSymbol } = useContext(V1ProjectContext)
+  const { projectId } = useContext(ProjectMetadataContext)
+
+  const { userAddress } = useWallet()
 
   return ({ redeemAmount, minAmount, preferConverted }, txOpts) => {
     if (
@@ -40,7 +45,13 @@ export function useRedeemTokensTx(): TransactorInstance<{
         userAddress,
         preferConverted,
       ],
-      txOpts,
+      {
+        ...txOpts,
+        title: t`Redeem ${tokenSymbolText({
+          tokenSymbol,
+          plural: true,
+        })}`,
+      },
     )
   }
 }

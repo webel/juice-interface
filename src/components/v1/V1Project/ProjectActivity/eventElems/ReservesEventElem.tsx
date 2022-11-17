@@ -7,8 +7,8 @@ import { V1ProjectContext } from 'contexts/v1/projectContext'
 import useSubgraphQuery from 'hooks/SubgraphQuery'
 import { PrintReservesEvent } from 'models/subgraph-entities/v1/print-reserves-event'
 import { useContext } from 'react'
-import { formatHistoricalDate } from 'utils/formatDate'
-import { formatWad, fromWad } from 'utils/formatNumber'
+import { formatHistoricalDate } from 'utils/format/formatDate'
+import { formatWad, fromWad } from 'utils/format/formatNumber'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
 
 export default function ReservesEventElem({
@@ -63,7 +63,7 @@ export default function ReservesEventElem({
             <Trans>
               Distributed reserved{' '}
               {tokenSymbolText({
-                tokenSymbol: tokenSymbol,
+                tokenSymbol,
                 capitalize: false,
                 plural: true,
               })}
@@ -78,7 +78,7 @@ export default function ReservesEventElem({
             >
               {formatWad(event.count, { precision: 0 })}{' '}
               {tokenSymbolText({
-                tokenSymbol: tokenSymbol,
+                tokenSymbol,
                 capitalize: false,
                 plural: parseInt(fromWad(event.count) || '0') !== 1,
               })}

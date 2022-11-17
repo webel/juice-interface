@@ -1,20 +1,26 @@
-import { NetworkContext } from 'contexts/networkContext'
-import { V1ProjectContext } from 'contexts/v1/projectContext'
-import { V1UserContext } from 'contexts/v1/userContext'
 import { BigNumber } from '@ethersproject/bignumber'
 import * as constants from '@ethersproject/constants'
+import { t } from '@lingui/macro'
+import { V1ProjectContext } from 'contexts/v1/projectContext'
+import { V1UserContext } from 'contexts/v1/userContext'
+import { useWallet } from 'hooks/Wallet'
 import { TicketMod } from 'models/mods'
 import { useContext } from 'react'
 
-import { TransactorInstance } from '../../Transactor'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import { TransactorInstance } from 'hooks/Transactor'
+import { useV1ProjectTitle } from '../ProjectTitle'
 
 export function useSetTicketModsTx(): TransactorInstance<{
   configured: BigNumber
   ticketMods: TicketMod[]
 }> {
   const { transactor, contracts } = useContext(V1UserContext)
-  const { userAddress } = useContext(NetworkContext)
-  const { projectId, terminal } = useContext(V1ProjectContext)
+  const { userAddress } = useWallet()
+  const { terminal } = useContext(V1ProjectContext)
+  const { projectId } = useContext(ProjectMetadataContext)
+
+  const projectTitle = useV1ProjectTitle()
 
   return ({ configured, ticketMods }, txOpts) => {
     if (
@@ -41,7 +47,10 @@ export function useSetTicketModsTx(): TransactorInstance<{
           beneficiary: m.beneficiary || constants.AddressZero,
         })),
       ],
-      txOpts,
+      {
+        ...txOpts,
+        title: t`Set reserved tokens of ${projectTitle}`,
+      },
     )
   }
 }

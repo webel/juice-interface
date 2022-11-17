@@ -1,22 +1,27 @@
-import { Button, Space } from 'antd'
-import { NetworkContext } from 'contexts/networkContext'
-
-import { useContext } from 'react'
+import { WarningOutlined } from '@ant-design/icons'
 import { Trans } from '@lingui/macro'
+import { Button, Space } from 'antd'
 import { ThemeContext } from 'contexts/themeContext'
+import { useWallet } from 'hooks/Wallet'
+import { useContext } from 'react'
 
 import Wallet from './Wallet'
 
 export default function Account() {
-  const { userAddress, onSelectWallet, shouldSwitchNetwork, walletIsReady } =
-    useContext(NetworkContext)
+  const {
+    userAddress,
+    isConnected,
+    connect,
+    chainUnsupported,
+    changeNetworks,
+  } = useWallet()
   const {
     theme: { colors },
   } = useContext(ThemeContext)
 
-  if (!userAddress) {
+  if (!isConnected) {
     return (
-      <Button onClick={onSelectWallet} block>
+      <Button onClick={() => connect()} block>
         <Trans>Connect</Trans>
       </Button>
     )
@@ -24,21 +29,22 @@ export default function Account() {
 
   if (!userAddress) return null
 
-  if (shouldSwitchNetwork) {
+  if (chainUnsupported) {
     return (
-      <Space direction="horizontal">
-        {shouldSwitchNetwork && (
-          <Button
-            size="small"
-            style={{
-              borderColor: colors.stroke.warn,
-              color: colors.text.warn,
-            }}
-            onClick={walletIsReady}
-          >
-            Wrong network
-          </Button>
-        )}
+      <Space>
+        <Button
+          size="small"
+          icon={<WarningOutlined style={{ color: colors.icon.warn }} />}
+          style={{
+            backgroundColor: colors.background.warn,
+            borderColor: colors.stroke.warn,
+            color: colors.text.warn,
+          }}
+          onClick={changeNetworks}
+        >
+          Wrong network
+        </Button>
+
         <Wallet userAddress={userAddress} />
       </Space>
     )

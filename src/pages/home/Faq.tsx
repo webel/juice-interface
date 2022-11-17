@@ -1,5 +1,6 @@
 import { Collapse } from 'antd'
 import CollapsePanel from 'antd/lib/collapse/CollapsePanel'
+import Image from 'next/image'
 
 import QAs from './QAs'
 
@@ -10,10 +11,12 @@ export default function Faq() {
         <CollapsePanel header={qa.q} key={i}>
           {qa.a && <div>{qa.a}</div>}
           {qa.img && (
-            <img
+            <Image
               src={qa.img.src}
               alt={qa.img.alt}
-              style={{ maxWidth: '100%' }}
+              width={qa.img.width}
+              height={qa.img.height}
+              loading="lazy"
             />
           )}
         </CollapsePanel>

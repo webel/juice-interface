@@ -1,9 +1,11 @@
+import { V2V3ContractsContext } from 'contexts/v2v3/V2V3ContractsContext'
 import { useContext } from 'react'
-import { V2UserContext } from 'contexts/v2/userContext'
 
+import { t } from '@lingui/macro'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import { TransactionContext } from 'contexts/transactionContext'
 import { TransactorInstance } from 'hooks/Transactor'
-import { V2ProjectContext } from 'contexts/v2/projectContext'
-import { NetworkContext } from 'contexts/networkContext'
+import { useWallet } from 'hooks/Wallet'
 
 export type ExtendLockTx = TransactorInstance<{
   name: string
@@ -13,9 +15,10 @@ export type ExtendLockTx = TransactorInstance<{
 }>
 
 export function useLaunchVeNftTx(): ExtendLockTx {
-  const { transactor, contracts } = useContext(V2UserContext)
-  const { userAddress } = useContext(NetworkContext)
-  const { projectId } = useContext(V2ProjectContext)
+  const { transactor } = useContext(TransactionContext)
+  const { contracts } = useContext(V2V3ContractsContext)
+  const { userAddress } = useWallet()
+  const { projectId } = useContext(ProjectMetadataContext)
 
   return ({ name, symbol, uriResolver, lockDurationOptions }, txOpts) => {
     if (
@@ -45,6 +48,7 @@ export function useLaunchVeNftTx(): ExtendLockTx {
       ],
       {
         ...txOpts,
+        title: t`Launch veNFT ${symbol}`,
       },
     )
   }

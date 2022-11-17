@@ -1,16 +1,18 @@
+import { RightCircleOutlined } from '@ant-design/icons'
 import { Trans } from '@lingui/macro'
 import { Button, Skeleton, Space } from 'antd'
 import ETHAmount from 'components/currency/ETHAmount'
 import Loading from 'components/Loading'
 import { ProjectCardProject } from 'components/ProjectCard'
 import ProjectLogo from 'components/ProjectLogo'
+import { PV_V2 } from 'constants/pv'
 import { ThemeContext } from 'contexts/themeContext'
+import useMobile from 'hooks/Mobile'
 import { useProjectMetadata } from 'hooks/ProjectMetadata'
 import { useProjectsQuery } from 'hooks/Projects'
-import { RightCircleOutlined } from '@ant-design/icons'
-import { useContext } from 'react'
 import Link from 'next/link'
-import useMobile from 'hooks/Mobile'
+import { useContext } from 'react'
+import { v2v3ProjectRoute } from 'utils/routes'
 
 import { SectionHeading } from './SectionHeading'
 import {
@@ -31,69 +33,68 @@ const SmallProjectCardMobile = ({
 
   return (
     <Link
-      key={`${project.id}_${project.cv}`}
+      key={`${project.id}_${project.pv}`}
       href={
-        project.cv === '2'
-          ? `/v2/p/${project.projectId}`
+        project.pv === PV_V2
+          ? v2v3ProjectRoute(project)
           : `/p/${project?.handle}`
       }
     >
-      <a>
+      <a
+        className="clickable-border"
+        style={{
+          cursor: 'pointer',
+          overflow: 'hidden',
+          width: '100%',
+          padding: '0.5rem 1rem',
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
         <div
-          className="clickable-border"
           style={{
-            cursor: 'pointer',
-            overflow: 'hidden',
-            width: '100%',
-            padding: '0.5rem 1rem',
-            textAlign: 'center',
             display: 'flex',
-            alignItems: 'center',
-            gap: 10,
+            justifyContent: 'center',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
-            <ProjectLogo
-              uri={metadata?.logoUri}
-              name={metadata?.name}
-              size={60}
-            />
-          </div>
+          <ProjectLogo
+            uri={metadata?.logoUri}
+            name={metadata?.name}
+            size={60}
+            projectId={project.projectId}
+          />
+        </div>
 
-          <div
-            style={{
-              fontWeight: 400,
-              width: '100%',
-            }}
-          >
-            {metadata ? (
-              <span
-                style={{
-                  color: colors.text.primary,
-                  margin: 0,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {metadata.name}
-              </span>
-            ) : (
-              <Skeleton paragraph={false} title={{ width: 120 }} active />
-            )}
-
-            <div
+        <div
+          style={{
+            fontWeight: 400,
+            width: '100%',
+          }}
+        >
+          {metadata ? (
+            <span
               style={{
                 color: colors.text.primary,
-                fontWeight: 500,
+                margin: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
-              <ETHAmount amount={project?.totalPaid} precision={0} /> raised
-            </div>
+              {metadata.name}
+            </span>
+          ) : (
+            <Skeleton paragraph={false} title={{ width: 120 }} active />
+          )}
+
+          <div
+            style={{
+              color: colors.text.primary,
+              fontWeight: 500,
+            }}
+          >
+            <ETHAmount amount={project?.totalPaid} precision={0} /> raised
           </div>
         </div>
       </a>
@@ -109,15 +110,16 @@ const SmallProjectCard = ({ project }: { project: ProjectCardProject }) => {
 
   return (
     <Link
-      key={`${project.id}_${project.cv}`}
+      key={`${project.id}_${project.pv}`}
       href={
-        project.cv === '2'
-          ? `/v2/p/${project.projectId}`
+        project.pv === PV_V2
+          ? v2v3ProjectRoute(project)
           : `/p/${project?.handle}`
       }
     >
       <a>
         <div
+          className="clickable-border"
           style={{
             cursor: 'pointer',
             overflow: 'hidden',
@@ -125,7 +127,6 @@ const SmallProjectCard = ({ project }: { project: ProjectCardProject }) => {
             padding: '1rem',
             textAlign: 'center',
           }}
-          className="clickable-border"
         >
           <div
             style={{
@@ -138,6 +139,7 @@ const SmallProjectCard = ({ project }: { project: ProjectCardProject }) => {
               uri={metadata?.logoUri}
               name={metadata?.name}
               size={90}
+              projectId={project.projectId}
             />
           </div>
 
@@ -254,19 +256,16 @@ export function TopProjectsSection() {
 
           <div style={{ textAlign: 'center' }}>
             <Space direction="vertical" style={{ width: '100%' }} size="large">
-              <Button
-                size="large"
-                type="primary"
-                href="/create"
-                block={isMobile}
-              >
-                <Trans>Start raising funds</Trans>
-              </Button>
+              <Link href="/create">
+                <Button size="large" type="primary" block={isMobile}>
+                  <Trans>Start raising funds</Trans>
+                </Button>
+              </Link>
 
               <div
                 role="button"
                 style={{
-                  fontSize: '0.9rem',
+                  fontSize: '0.875rem',
                   color: colors.text.secondary,
                   cursor: 'pointer',
                 }}

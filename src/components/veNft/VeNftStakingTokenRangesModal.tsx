@@ -1,25 +1,25 @@
 import { Trans } from '@lingui/macro'
-import { Col, Modal, Row, Image } from 'antd'
-import { VeNftContext } from 'contexts/v2/veNftContext'
-import { useContext } from 'react'
-import { getVeNftBaseImage } from 'utils/v2/veNft'
+import { Col, Image, Modal, Row } from 'antd'
+import { VARIANTS_HASH } from 'constants/veNft/veNftProject'
+import { useVeNftVariants } from 'hooks/veNft/VeNftVariants'
+import { getVeNftBaseImage } from 'utils/veNft'
 
 type StakingTokenRangesModalProps = {
-  visible: boolean
+  open: boolean
   tokenSymbolDisplayText: string
   onCancel: VoidFunction
 }
 
 export default function StakingTokenRangesModal({
-  visible,
+  open,
   tokenSymbolDisplayText,
   onCancel,
 }: StakingTokenRangesModalProps) {
-  const { baseImagesHash, variants } = useContext(VeNftContext)
+  const { data: variants } = useVeNftVariants()
 
   return (
     <Modal
-      visible={visible}
+      open={open}
       onCancel={onCancel}
       cancelText="Close"
       okButtonProps={{ style: { display: 'none' } }}
@@ -37,9 +37,8 @@ export default function StakingTokenRangesModal({
         </Col>
       </Row>
       {variants &&
-        baseImagesHash &&
         variants.map(variant => {
-          const image = getVeNftBaseImage(baseImagesHash, variant, {
+          const image = getVeNftBaseImage(VARIANTS_HASH, variant, {
             useFallback: true,
           })
           const nftRange = `${variant.tokensStakedMin}${

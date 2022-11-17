@@ -1,38 +1,38 @@
 import { parseEther } from '@ethersproject/units'
 import { Trans } from '@lingui/macro'
-import { Descriptions } from 'antd'
+import { Descriptions, Tooltip } from 'antd'
 import CurrencySymbol from 'components/CurrencySymbol'
 
-import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { ThemeContext } from 'contexts/themeContext'
+import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { V1CurrencyOption } from 'models/v1/currencyOption'
 import { V1FundingCycle } from 'models/v1/fundingCycle'
 import { useContext } from 'react'
-import { formatDate } from 'utils/formatDate'
+import { formatDate, formatDateToUTC } from 'utils/format/formatDate'
 import {
   formatWad,
   perbicentToPercent,
   permilleToPercent,
-} from 'utils/formatNumber'
+} from 'utils/format/formatNumber'
+import { tokenSymbolText } from 'utils/tokenSymbolText'
 import {
   decodeFundingCycleMetadata,
   getUnsafeV1FundingCycleProperties,
   hasFundingTarget,
   isRecurring,
 } from 'utils/v1/fundingCycle'
-import { weightedRate } from 'utils/math'
-import { tokenSymbolText } from 'utils/tokenSymbolText'
+import { weightAmountPerbicent } from 'utils/v1/math'
 
 import { V1CurrencyName } from 'utils/v1/currency'
 
 import TooltipLabel from 'components/TooltipLabel'
 
-import FundingCycleDetailWarning from 'components/Project/FundingCycleDetailWarning'
 import EtherscanLink from 'components/EtherscanLink'
+import FundingCycleDetailWarning from 'components/Project/FundingCycleDetailWarning'
 
-import { getBallotStrategyByAddress } from 'constants/v1/ballotStrategies/getBallotStrategiesByAddress'
 import { FUNDING_CYCLE_WARNING_TEXT } from 'constants/fundingWarningText'
 import { SECONDS_IN_DAY } from 'constants/numbers'
+import { getBallotStrategyByAddress } from 'constants/v1/ballotStrategies/getBallotStrategiesByAddress'
 
 export default function FundingCycleDetails({
   fundingCycle,
@@ -74,7 +74,7 @@ export default function FundingCycleDetails({
 
   const ReservedRateText = () => {
     const payerRate = formatWad(
-      weightedRate(
+      weightAmountPerbicent(
         fundingCycle?.weight,
         fcReservedRate,
         parseEther('1'),
@@ -86,7 +86,7 @@ export default function FundingCycleDetails({
     )
 
     const reservedRate = formatWad(
-      weightedRate(
+      weightAmountPerbicent(
         fundingCycle?.weight,
         fcReservedRate,
         parseEther('1'),
@@ -156,13 +156,23 @@ export default function FundingCycleDetails({
 
         {fundingCycle.duration.gt(0) && (
           <Descriptions.Item label={<Trans>Start</Trans>}>
-            {formattedStartTime}
+            <Tooltip title={formatDateToUTC(fundingCycle.start.mul(1000))}>
+              {formattedStartTime}
+            </Tooltip>
           </Descriptions.Item>
         )}
 
         {fundingCycle.duration.gt(0) && (
           <Descriptions.Item label={<Trans>End</Trans>}>
-            {formattedEndTime}
+            <Tooltip
+              title={formatDateToUTC(
+                fundingCycle.start
+                  .add(fundingCycle.duration.mul(SECONDS_IN_DAY))
+                  .mul(1000),
+              )}
+            >
+              {formattedEndTime}
+            </Tooltip>
           </Descriptions.Item>
         )}
 
@@ -318,7 +328,7 @@ export default function FundingCycleDetails({
           {ballotStrategy.name}
         </FundingCycleDetailWarning>
         <div style={{ color: colors.text.secondary }}>
-          <div style={{ fontSize: '0.7rem' }}>
+          <div style={{ fontSize: '0.75rem' }}>
             <Trans>
               Address:{' '}
               <EtherscanLink value={ballotStrategy.address} type="address" />

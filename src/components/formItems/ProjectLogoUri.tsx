@@ -1,8 +1,6 @@
-import { Form } from 'antd'
 import { t } from '@lingui/macro'
-
-import { IPFS_TAGS } from 'utils/ipfs'
-
+import { Form } from 'antd'
+import { IPFS_TAGS } from 'constants/ipfs'
 import ImageUploader from '../inputs/ImageUploader'
 import { FormItemExt } from './formItemExt'
 

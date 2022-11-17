@@ -1,8 +1,7 @@
 import { t, Trans } from '@lingui/macro'
-import { Form, Input, Space } from 'antd'
-import * as constants from '@ethersproject/constants'
-import { useContext, useState } from 'react'
+import { Space } from 'antd'
 import { ThemeContext } from 'contexts/themeContext'
+import { useContext, useState } from 'react'
 
 import ReconfigurationStrategyOption from 'components/ReconfigurationStrategy/ReconfigurationStrategyOption'
 
@@ -10,43 +9,10 @@ import { BallotStrategy } from 'models/ballot'
 
 import { createCustomStrategy } from 'utils/ballot'
 
-import ExternalLink from '../ExternalLink'
 import FormItemWarningText from '../FormItemWarningText'
-import { readNetwork } from 'constants/networks'
+import { CustomStrategyInput } from './CustomStrategyInput'
 
 const CUSTOM_STRATEGY_INDEX = -1
-
-function CustomStrategyInput({
-  value,
-  onChange,
-}: {
-  value?: string
-  onChange: (address: string) => void
-}) {
-  return (
-    <div>
-      <Form.Item
-        extra={
-          <Trans>
-            The address of any smart contract deployed on{' '}
-            {readNetwork.name ?? 'mainnet'} that implements{' '}
-            <ExternalLink href="https://github.com/jbx-protocol/juice-contracts-v1/blob/main/contracts/FundingCycles.sol">
-              this interface
-            </ExternalLink>
-            .
-          </Trans>
-        }
-      >
-        <Input
-          style={{ width: 400 }}
-          value={value}
-          placeholder={constants.AddressZero}
-          onChange={e => onChange(e.target.value.toLowerCase())}
-        />
-      </Form.Item>
-    </div>
-  )
-}
 
 export default function ReconfigurationStrategySelector({
   selectedStrategy,
@@ -88,7 +54,7 @@ export default function ReconfigurationStrategySelector({
           content={
             <div>
               <p>{strategy.description}</p>
-              <p style={{ fontSize: '0.7rem', color: colors.text.tertiary }}>
+              <p style={{ fontSize: '0.75rem', color: colors.text.tertiary }}>
                 <Trans>Contract address: {strategy.address}</Trans>
               </p>
             </div>

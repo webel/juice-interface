@@ -3,28 +3,28 @@ import { t, Trans } from '@lingui/macro'
 import { Statistic } from 'antd'
 import CurrencySymbol from 'components/CurrencySymbol'
 import TooltipLabel from 'components/TooltipLabel'
-import { formatWad } from 'utils/formatNumber'
+import { formatWad } from 'utils/format/formatNumber'
 import {
   formatDiscountRate,
   formatRedemptionRate,
   MAX_DISTRIBUTION_LIMIT,
-} from 'utils/v2/math'
+} from 'utils/v2v3/math'
 
 import FundingCycleDetailWarning from 'components/Project/FundingCycleDetailWarning'
-import { detailedTimeString } from 'utils/formatTime'
+import SplitList from 'components/v2v3/shared/SplitList'
 import {
   DISCOUNT_RATE_EXPLANATION,
   REDEMPTION_RATE_EXPLANATION,
-} from 'components/v2/V2Project/V2FundingCycleSection/settingExplanations'
-import SplitList from 'components/v2/shared/SplitList'
-import { Split } from 'models/v2/splits'
+} from 'components/v2v3/V2V3Project/V2V3FundingCycleSection/settingExplanations'
+import { Split } from 'models/splits'
+import { detailedTimeString } from 'utils/format/formatTime'
 
-import { getBallotStrategyByAddress } from 'constants/v2/ballotStrategies/getBallotStrategiesByAddress'
+import { CurrencyName } from 'constants/currency'
 import {
   FUNDING_CYCLE_WARNING_TEXT,
   RESERVED_RATE_WARNING_THRESHOLD_PERCENT,
 } from 'constants/fundingWarningText'
-import { CurrencyName } from 'constants/currency'
+import { getBallotStrategyByAddress } from 'utils/v2v3/ballotStrategies'
 
 export function DistributionLimitStatistic({
   distributionLimit,
@@ -70,8 +70,8 @@ export function DistributionLimitStatistic({
               <Trans>
                 Distribution limit is infinite.{' '}
                 <p style={{ fontSize: '1rem' }}>
-                  The project will control how all funds are distributed, and
-                  none can be redeemed by token holders.
+                  The project will control how all funds are distributed. Token
+                  holders cannot redeem any funds raised.
                 </p>
               </Trans>
             ) : (
@@ -334,7 +334,7 @@ export function ReconfigurationStatistic({
           >
             <div>
               {ballot.name}{' '}
-              <div style={{ fontSize: '0.7rem' }}>{ballot.address}</div>
+              <div style={{ fontSize: '0.75rem' }}>{ballot.address}</div>
             </div>
           </FundingCycleDetailWarning>
         )
@@ -378,7 +378,7 @@ export function DistributionSplitsStatistic({
         />
       }
       valueRender={() => (
-        <div style={{ fontSize: '0.9rem' }}>
+        <div style={{ fontSize: '0.875rem' }}>
           <SplitList
             splits={splits}
             currency={currency}
@@ -411,7 +411,7 @@ export function ReservedSplitsStatistic({
         />
       }
       valueRender={() => (
-        <div style={{ fontSize: '0.9rem' }}>
+        <div style={{ fontSize: '0.875rem' }}>
           <SplitList
             splits={splits}
             projectOwnerAddress={projectOwnerAddress}

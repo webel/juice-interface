@@ -1,7 +1,7 @@
 // TODO: Should we fix these ts-ignore. At very least, we should consider documenting why it is done
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import axios from 'axios'
-import { CV } from 'models/cv'
+import { PV } from 'models/pv'
 import {
   DistributeToPayoutModEvent,
   DistributeToPayoutModEventJson,
@@ -53,15 +53,20 @@ import {
   UseAllowanceEventJson,
 } from 'models/subgraph-entities/v2/use-allowance-event'
 import {
+  parseVeNftContractJson,
   VeNftContract,
   VeNftContractJson,
-  parseVeNftContractJson,
 } from 'models/subgraph-entities/v2/venft-contract'
 import {
+  parseVeNftTokenJson,
   VeNftToken,
   VeNftTokenJson,
-  parseVeNftTokenJson,
 } from 'models/subgraph-entities/v2/venft-token'
+import {
+  AddToBalanceEvent,
+  AddToBalanceEventJson,
+  parseAddToBalanceEventJson,
+} from 'models/subgraph-entities/vX/add-to-balance-event'
 import {
   DeployedERC20Event,
   DeployedERC20EventJson,
@@ -122,6 +127,7 @@ export interface SubgraphEntities {
   project: Project
   projectSearch: Project
   payEvent: PayEvent
+  addToBalanceEvent: AddToBalanceEvent
   redeemEvent: RedeemEvent
   participant: Participant
   tapEvent: TapEvent
@@ -148,6 +154,7 @@ export interface SubgraphQueryReturnTypes {
   project: { projects: ProjectJson[] }
   projectSearch: { projectSearch: ProjectJson[] }
   payEvent: { payEvents: PayEventJson[] }
+  addToBalanceEvent: { addToBalanceEvents: AddToBalanceEventJson[] }
   redeemEvent: { redeemEvents: RedeemEventJson[] }
   participant: { participants: ParticipantJson[] }
   tapEvent: { tapEvents: TapEventJson[] }
@@ -193,7 +200,7 @@ export type OrderDirection = 'asc' | 'desc'
 
 export type WhereConfig<E extends EntityKey> = {
   key: EntityKeys<E>
-  value: string | number | boolean | string[] | number[] | null
+  value: string | number | boolean | null | (string | number | boolean | null)[]
   operator?:
     | 'not'
     | 'gt'
@@ -373,6 +380,12 @@ export function formatGraphResponse<E extends EntityKey>(
       if ('payEvents' in response) {
         // @ts-ignore
         return response.payEvents.map(parsePayEventJson)
+      }
+      break
+    case 'addToBalanceEvent':
+      if ('addToBalanceEvents' in response) {
+        // @ts-ignore
+        return response.addToBalanceEvents.map(parseAddToBalanceEventJson)
       }
       break
     case 'redeemEvent':
@@ -569,13 +582,13 @@ const isPluralQuery = (key: EntityKey): boolean => {
 }
 
 /**
- * Get the subgraph representation of a project ID, based on given [cv] and [projectId]
+ * Get the subgraph representation of a project ID, based on given [pv] and [projectId]
  *
  * Reference implementation: https://github.com/jbx-protocol/juice-subgraph/blob/main/src/utils.ts#L84
  *
- * @param cv Contracts version
+ * @param pv Contracts version
  * @param projectId the on-chain project ID
  */
-export const getSubgraphIdForProject = (cv: CV, projectId: number) => {
-  return `${cv}-${projectId}`
+export const getSubgraphIdForProject = (pv: PV, projectId: number) => {
+  return `${pv}-${projectId}`
 }

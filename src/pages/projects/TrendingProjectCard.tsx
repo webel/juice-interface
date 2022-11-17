@@ -1,23 +1,20 @@
+import * as constants from '@ethersproject/constants'
+import { Plural, t, Trans } from '@lingui/macro'
+import { Skeleton } from 'antd'
+import ETHAmount from 'components/currency/ETHAmount'
 import Loading from 'components/Loading'
 import ProjectLogo from 'components/ProjectLogo'
-import ETHAmount from 'components/currency/ETHAmount'
-
-import { t, Trans, Plural } from '@lingui/macro'
-
+import { ProjectVersionBadge } from 'components/ProjectVersionBadge'
+import { PV_V2 } from 'constants/pv'
+import { trendingWindowDays } from 'constants/trendingWindowDays'
 import { ThemeContext } from 'contexts/themeContext'
-import * as constants from '@ethersproject/constants'
+import { useProjectHandleText } from 'hooks/ProjectHandleText'
 import { useProjectMetadata } from 'hooks/ProjectMetadata'
 import { Project } from 'models/subgraph-entities/vX/project'
-import { CSSProperties, useContext, useMemo } from 'react'
-import { getTerminalVersion } from 'utils/v1/terminals'
-
 import Link from 'next/link'
-
-import { Skeleton } from 'antd'
-
-import { v2ProjectRoute } from 'utils/routes'
-
-import { trendingWindowDays } from 'constants/trendingWindowDays'
+import { CSSProperties, useContext, useMemo } from 'react'
+import { v2v3ProjectRoute } from 'utils/routes'
+import { getTerminalVersion } from 'utils/v1/terminals'
 
 export default function TrendingProjectCard({
   project,
@@ -33,7 +30,8 @@ export default function TrendingProjectCard({
     | 'trendingPaymentsCount'
     | 'createdWithinTrendingWindow'
     | 'handle'
-    | 'cv'
+    | 'pv'
+    | 'projectId'
   >
   size?: 'sm' | 'lg'
   rank: number
@@ -42,27 +40,12 @@ export default function TrendingProjectCard({
     theme: { colors, radii },
   } = useContext(ThemeContext)
 
-  const cardStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    whiteSpace: 'pre',
-    height: '100%',
-    overflow: 'hidden',
-    padding: '25px 20px',
-  }
-
-  const rankStyle: CSSProperties = {
-    fontSize: 22,
-    color: colors.text.primary,
-    fontWeight: 400,
-    marginRight: 15,
-    width: 25,
-    textAlign: 'center',
-  }
-
-  const { data: metadata } = useProjectMetadata(project?.metadataUri)
-
-  const terminalVersion = getTerminalVersion(project?.terminal)
+  const { data: metadata } = useProjectMetadata(project.metadataUri)
+  const { handleText } = useProjectHandleText({
+    handle: project.handle,
+    projectId: project.projectId,
+  })
+  const terminalVersion = getTerminalVersion(project.terminal)
 
   // If the total paid is greater than 0, but less than 10 ETH, show two decimal places.
   const precision =
@@ -101,11 +84,31 @@ export default function TrendingProjectCard({
 
   const paymentCount = project.trendingPaymentsCount
 
+  const cardStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    whiteSpace: 'pre',
+    height: '100%',
+    overflow: 'hidden',
+    padding: '25px 20px',
+  }
+
+  const rankStyle: CSSProperties = {
+    fontSize: 22,
+    color: colors.text.primary,
+    fontWeight: 400,
+    marginRight: 15,
+    width: 25,
+    textAlign: 'center',
+  }
+
   return (
     <Link
       key={project.handle}
       href={
-        project.cv === '2' ? v2ProjectRoute(project) : `/p/${project?.handle}`
+        project.pv === PV_V2
+          ? v2v3ProjectRoute(project)
+          : `/p/${project.handle}`
       }
     >
       <a>
@@ -125,6 +128,7 @@ export default function TrendingProjectCard({
                 uri={metadata?.logoUri}
                 name={metadata?.name}
                 size={size === 'sm' ? 70 : 110}
+                projectId={project.projectId}
               />
             </div>
 
@@ -153,26 +157,13 @@ export default function TrendingProjectCard({
 
               {size === 'sm' ? null : (
                 <div>
-                  {project.handle && (
-                    <span
-                      style={{
-                        color: colors.text.primary,
-                        fontWeight: 500,
-                        marginRight: 10,
-                      }}
-                    >
-                      @{project.handle}
-                    </span>
-                  )}
-                  <span
-                    style={{
-                      color: colors.text.tertiary,
-                      fontSize: '0.7rem',
-                      fontWeight: 500,
-                    }}
-                  >
-                    V{terminalVersion ?? project.cv}
-                  </span>
+                  <span style={{ color: colors.text.primary, fontWeight: 500 }}>
+                    {handleText}
+                  </span>{' '}
+                  <ProjectVersionBadge
+                    size="small"
+                    versionText={`V${terminalVersion ?? project.pv}`}
+                  />
                 </div>
               )}
 

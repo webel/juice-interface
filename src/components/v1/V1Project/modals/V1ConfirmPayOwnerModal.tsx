@@ -3,16 +3,27 @@ import * as constants from '@ethersproject/constants'
 import { t, Trans } from '@lingui/macro'
 import { Checkbox, Descriptions, Form, Input, Modal, Space } from 'antd'
 import { useForm, useWatch } from 'antd/lib/form/Form'
+import Callout from 'components/Callout'
 import FormattedAddress from 'components/FormattedAddress'
-import { NetworkContext } from 'contexts/networkContext'
+import Sticker from 'components/icons/Sticker'
+import { FormImageUploader } from 'components/inputs/FormImageUploader'
+import { AttachStickerModal } from 'components/modals/AttachStickerModal'
+import { PaymentMemoSticker } from 'components/modals/AttachStickerModal/paymentMemoSticker'
+import Paragraph from 'components/Paragraph'
+import { StickerSelection } from 'components/Project/StickerSelection'
+import ProjectRiskNotice from 'components/ProjectRiskNotice'
+import { V1_CURRENCY_ETH, V1_CURRENCY_USD } from 'constants/v1/currency'
+import { ProjectPreferences } from 'constants/v1/projectPreferences'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import { ThemeContext } from 'contexts/themeContext'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { useCurrencyConverter } from 'hooks/CurrencyConverter'
-import { emitErrorNotification } from 'utils/notifications'
-
 import { usePayV1ProjectTx } from 'hooks/v1/transactor/PayV1ProjectTx'
+import { useWallet } from 'hooks/Wallet'
 import { useContext, useState } from 'react'
-import { formattedNum, formatWad } from 'utils/formatNumber'
-import { weightedRate } from 'utils/math'
+import { buildPaymentMemo } from 'utils/buildPaymentMemo'
+import { formattedNum, formatWad } from 'utils/format/formatNumber'
+import { emitErrorNotification } from 'utils/notifications'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
 import { V1CurrencyName } from 'utils/v1/currency'
 import {
@@ -20,24 +31,7 @@ import {
   fundingCycleRiskCount,
   getUnsafeV1FundingCycleProperties,
 } from 'utils/v1/fundingCycle'
-
-import Callout from 'components/Callout'
-import Paragraph from 'components/Paragraph'
-import ProjectRiskNotice from 'components/ProjectRiskNotice'
-
-import Sticker from 'components/icons/Sticker'
-import { FormImageUploader } from 'components/inputs/FormImageUploader'
-import { AttachStickerModal } from 'components/modals/AttachStickerModal'
-import { StickerSelection } from 'components/Project/StickerSelection'
-
-import { buildPaymentMemo } from 'utils/buildPaymentMemo'
-
-import { PaymentMemoSticker } from 'components/modals/AttachStickerModal/paymentMemoSticker'
-
-import { ThemeContext } from 'contexts/themeContext'
-
-import { V1_CURRENCY_ETH, V1_CURRENCY_USD } from 'constants/v1/currency'
-import { ProjectPreferences } from 'constants/v1/projectPreferences'
+import { weightAmountPerbicent } from 'utils/v1/math'
 
 interface V1PayFormType {
   memo?: string
@@ -47,13 +41,13 @@ interface V1PayFormType {
 }
 
 export default function V1ConfirmPayOwnerModal({
-  visible,
+  open,
   weiAmount,
   onSuccess,
   onCancel,
   payButtonText,
 }: {
-  visible?: boolean
+  open?: boolean
   weiAmount: BigNumber | undefined
   onSuccess?: VoidFunction
   onCancel?: VoidFunction
@@ -62,20 +56,25 @@ export default function V1ConfirmPayOwnerModal({
   const {
     theme: { colors },
   } = useContext(ThemeContext)
+  const { tokenSymbol, tokenAddress, currentFC } = useContext(V1ProjectContext)
+  const { projectMetadata } = useContext(ProjectMetadataContext)
+
   const [loading, setLoading] = useState<boolean>()
-
-  const [form] = useForm<V1PayFormType>()
-
   const [attachStickerModalVisible, setAttachStickerModalVisible] =
     useState<boolean>(false)
 
+  const [form] = useForm<V1PayFormType>()
+
   const stickerUrls = useWatch('stickerUrls', form)
 
-  const { userAddress, onSelectWallet } = useContext(NetworkContext)
-  const { tokenSymbol, tokenAddress, currentFC, metadata } =
-    useContext(V1ProjectContext)
+  const {
+    userAddress,
+    chainUnsupported,
+    isConnected,
+    changeNetworks,
+    connect,
+  } = useWallet()
   const converter = useCurrencyConverter()
-
   const payProjectTx = usePayV1ProjectTx()
 
   const canAddMoreStickers =
@@ -95,8 +94,13 @@ export default function V1ConfirmPayOwnerModal({
     } = form.getFieldsValue()
 
     // Prompt wallet connect if no wallet connected
-    if (!userAddress && onSelectWallet) {
-      onSelectWallet()
+    if (chainUnsupported) {
+      await changeNetworks()
+      return
+    }
+    if (!isConnected) {
+      await connect()
+      return
     }
     setLoading(true)
 
@@ -129,13 +133,13 @@ export default function V1ConfirmPayOwnerModal({
     currentFC?.metadata,
   )?.reservedRate
 
-  const receivedTickets = weightedRate(
+  const receivedTickets = weightAmountPerbicent(
     currentFC?.weight,
     fcReservedRate,
     weiAmount,
     'payer',
   )
-  const ownerTickets = weightedRate(
+  const ownerTickets = weightAmountPerbicent(
     currentFC?.weight,
     fcReservedRate,
     weiAmount,
@@ -154,7 +158,7 @@ export default function V1ConfirmPayOwnerModal({
 
   const hasIssuedTokens = tokenAddress && tokenAddress !== constants.AddressZero
 
-  if (!metadata) return null
+  if (!projectMetadata) return null
 
   const riskCount = currentFC ? fundingCycleRiskCount(currentFC) : undefined
 
@@ -175,31 +179,33 @@ export default function V1ConfirmPayOwnerModal({
 
   return (
     <Modal
-      title={t`Pay ${metadata.name}`}
-      visible={visible}
+      title={t`Pay ${projectMetadata.name}`}
+      open={open}
       onOk={pay}
       okText={userAddress ? payButtonText : t`Connect wallet to pay`}
       onCancel={onCancel}
       confirmLoading={loading}
       width={640}
       centered={true}
+      zIndex={1}
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <p>
           <Trans>
-            Paying <span style={{ fontWeight: 'bold' }}>{metadata.name}</span>{' '}
+            Paying{' '}
+            <span style={{ fontWeight: 'bold' }}>{projectMetadata.name}</span>{' '}
             is not an investment — it's a way to support the project. Any value
             or utility of the tokens you receive is determined by{' '}
-            {metadata.name}.
+            {projectMetadata.name}.
           </Trans>
         </p>
 
-        {metadata.payDisclosure && (
+        {projectMetadata.payDisclosure && (
           <div>
             <h4>
-              <Trans>Notice from {metadata.name}:</Trans>
+              <Trans>Notice from {projectMetadata.name}</Trans>
             </h4>
-            <Paragraph description={metadata.payDisclosure} />
+            <Paragraph description={projectMetadata.payDisclosure} />
           </div>
         )}
         {renderRiskNotice()}
@@ -210,7 +216,7 @@ export default function V1ConfirmPayOwnerModal({
           </Descriptions.Item>
           <Descriptions.Item
             label={t`${tokenSymbolText({
-              tokenSymbol: tokenSymbol,
+              tokenSymbol,
               capitalize: true,
               plural: true,
             })} for you`}
@@ -227,7 +233,7 @@ export default function V1ConfirmPayOwnerModal({
           </Descriptions.Item>
           <Descriptions.Item
             label={t`${tokenSymbolText({
-              tokenSymbol: tokenSymbol,
+              tokenSymbol,
               capitalize: true,
               plural: true,
             })} reserved`}
@@ -305,7 +311,7 @@ export default function V1ConfirmPayOwnerModal({
           )}
         </Form>
         <AttachStickerModal
-          visible={attachStickerModalVisible}
+          open={attachStickerModalVisible}
           onClose={() => setAttachStickerModalVisible(false)}
           onSelect={sticker => {
             if (typeof window === 'undefined') {

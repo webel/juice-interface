@@ -7,6 +7,10 @@
   background: unset !important;
 }
 
+.ant-menu-inline .ant-menu-item {
+  width: auto;
+}
+
 .ant-menu-submenu-title {
   color: var(--text-primary) !important;
   font-weight: 600;
@@ -14,6 +18,10 @@
 
 .ant-menu-sub {
   margin-top: -10px !important;
+}
+
+.ant-menu-sub.ant-menu-inline {
+  background: none;
 }
 
 .ant-menu-inline .ant-menu-item:not(:last-child) {
@@ -29,6 +37,67 @@
   background: unset !important;
 }
 
+.ant-menu-item:hover {
+  background: none !important;
+}
+
+.menu-item-sider:hover {
+  background: var(--background-l2) !important;
+}
+
+.ant-menu-item-group-title {
+  text-transform: uppercase;
+  padding-bottom: 0;
+  font-size: 0.75rem;
+}
+
+.ant-menu > .ant-menu-item-divider {
+  margin: 1rem 0;
+  border-color: var(--stroke-tertiary);
+}
+
+.ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected,
+.ant-menu-dark.ant-menu-dark:not(.ant-menu-horizontal) .ant-menu-item-selected {
+  background-color: var(--background-l2);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.ant-menu:not(.ant-menu-horizontal) {
+  .ant-menu-item-selected {
+    background-color: var(--background-l4);
+  }
+}
+
+.ant-menu-light .ant-menu-item:hover {
+  color: var(--text-primary);
+  background-color: var(--background-l2);
+}
+
+.ant-menu,
+.ant-menu-item,
+.ant-menu-item > a .ant-menu-item a {
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.ant-menu-inline.ant-menu-root .ant-menu-item {
+  transition: border-color 0.1s, background 0.1s, padding 0.1s linear;
+}
+
 .ant-menu-item::after {
   display: none !important;
+}
+
+.ant-menu.ant-menu-dark {
+  background-color: transparent;
+}
+
+.ant-menu-light .ant-menu-item-active {
+  color: var(--text-primary);
+}
+
+ul.ant-dropdown-menu.ant-dropdown-menu-root.ant-dropdown-menu-vertical.ant-dropdown-menu {
+  margin-top: -4px !important;
 }

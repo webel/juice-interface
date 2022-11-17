@@ -2,35 +2,26 @@ import { InfoCircleOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 import { Button } from 'antd'
 import Search from 'antd/lib/input/Search'
-import FeedbackFormButton from 'components/FeedbackFormButton'
-import Loading from 'components/Loading'
 import { AppWrapper } from 'components/common'
-
+import ExternalLink from 'components/ExternalLink'
+import { PV_V1, PV_V1_1, PV_V2 } from 'constants/pv'
+import { layouts } from 'constants/styles/layouts'
+import { useWallet } from 'hooks/Wallet'
 import { ProjectCategory } from 'models/project-visibility'
-import { useContext, useEffect, useMemo, useRef, useState } from 'react'
-
-import Grid from 'components/Grid'
-import ProjectCard, { ProjectCardProject } from 'components/ProjectCard'
-
+import { PV } from 'models/pv'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { useEffect, useMemo, useState } from 'react'
+import { helpPagePath } from 'utils/routes'
 
-import { useInfiniteProjectsQuery, useProjectsSearch } from 'hooks/Projects'
-
-import { NetworkContext } from 'contexts/networkContext'
-import { ThemeContext } from 'contexts/themeContext'
-
-import { CV } from 'models/cv'
-import ExternalLink from 'components/ExternalLink'
-import { helpPagePath } from 'utils/helpPageHelper'
-
-import { layouts } from 'constants/styles/layouts'
-import TrendingProjects from './TrendingProjects'
-import ProjectsTabs from './ProjectsTabs'
-import HoldingsProjects from './HoldingsProjects'
-import ProjectsFilterAndSort from './ProjectsFilterAndSort'
+import AllProjects from './AllProjects'
 import ArchivedProjectsMessage from './ArchivedProjectsMessage'
+import HoldingsProjects from './HoldingsProjects'
+import LatestProjects from './LatestProjects'
 import MyProjects from './MyProjects'
+import ProjectsFilterAndSort from './ProjectsFilterAndSort'
+import ProjectsTabs from './ProjectsTabs'
+import TrendingProjects from './TrendingProjects'
 
 export default function ProjectsPage() {
   return (
@@ -42,8 +33,6 @@ export default function ProjectsPage() {
 
 type OrderByOption = 'createdAt' | 'totalPaid'
 
-const pageSize = 20
-
 const defaultTab: ProjectCategory = 'trending'
 
 function Projects() {
@@ -51,12 +40,12 @@ function Projects() {
 
   // Checks URL to see if tab has been set
   const router = useRouter()
+  const search = Array.isArray(router.query.search)
+    ? router.query.search[0]
+    : router.query.search
 
-  const { userAddress } = useContext(NetworkContext)
-
-  const [searchText, setSearchText] = useState<string>(
-    (router.query.search as string | undefined) ?? '',
-  )
+  const { userAddress } = useWallet()
+  const [searchText, setSearchText] = useState<typeof search>(search)
 
   useEffect(() => {
     setSelectedTab(() => {
@@ -65,6 +54,8 @@ function Projects() {
           return 'trending'
         case 'all':
           return 'all'
+        case 'new':
+          return 'new'
         case 'holdings':
           return 'holdings'
         case 'myprojects':
@@ -73,8 +64,8 @@ function Projects() {
           return defaultTab
       }
     })
-    setSearchText(router.query.search as string)
-  }, [userAddress, router.query.tab, router.query.search])
+    setSearchText(search)
+  }, [userAddress, router.query.tab, search])
 
   const [orderBy, setOrderBy] = useState<OrderByOption>('totalPaid')
   const [includeV1, setIncludeV1] = useState<boolean>(true)
@@ -82,61 +73,13 @@ function Projects() {
   const [includeV2, setIncludeV2] = useState<boolean>(true)
   const [showArchived, setShowArchived] = useState<boolean>(false)
 
-  const loadMoreContainerRef = useRef<HTMLDivElement>(null)
-
-  const {
-    theme: { colors },
-  } = useContext(ThemeContext)
-
-  const cv: CV[] | undefined = useMemo(() => {
-    const _cv: CV[] = []
-    if (includeV1) _cv.push('1')
-    if (includeV1_1) _cv.push('1.1')
-    if (includeV2) _cv.push('2')
-    return _cv.length ? _cv : ['1', '1.1', '2']
+  const pv: PV[] | undefined = useMemo(() => {
+    const _pv: PV[] = []
+    if (includeV1) _pv.push(PV_V1)
+    if (includeV1_1) _pv.push(PV_V1_1)
+    if (includeV2) _pv.push(PV_V2)
+    return _pv.length ? _pv : [PV_V1, PV_V1_1, PV_V2]
   }, [includeV1, includeV1_1, includeV2])
-
-  const {
-    data: pages,
-    isLoading: isLoadingProjects,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteProjectsQuery({
-    orderBy,
-    pageSize,
-    orderDirection: 'desc',
-    state: showArchived ? 'archived' : 'active',
-    cv,
-  })
-
-  const { data: searchPages, isLoading: isLoadingSearch } =
-    useProjectsSearch(searchText)
-
-  // When we scroll within 200px of our loadMoreContainerRef, fetch the next page.
-  useEffect(() => {
-    if (loadMoreContainerRef.current && selectedTab !== 'trending') {
-      const observer = new IntersectionObserver(
-        entries => {
-          if (entries.find(e => e.isIntersecting) && hasNextPage) {
-            fetchNextPage()
-          }
-        },
-        {
-          rootMargin: '200px',
-        },
-      )
-      observer.observe(loadMoreContainerRef.current)
-
-      return () => observer.disconnect()
-    }
-  }, [selectedTab, fetchNextPage, hasNextPage])
-
-  const isLoading = isLoadingProjects || isLoadingSearch
-
-  const concatenatedPages = searchText?.length
-    ? searchPages
-    : pages?.pages?.reduce((prev, group) => [...prev, ...group], [])
 
   return (
     <div style={{ ...layouts.maxWidth }}>
@@ -146,6 +89,7 @@ function Projects() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'baseline',
+            paddingBottom: '12px',
           }}
         >
           <h1>
@@ -224,56 +168,14 @@ function Projects() {
       </div>
 
       {selectedTab === 'all' ? (
-        <>
-          {concatenatedPages && (
-            <Grid>
-              {concatenatedPages.map(p => (
-                <ProjectCard
-                  key={`${p.id}_${p.cv}`}
-                  project={p as ProjectCardProject}
-                />
-              ))}
-            </Grid>
-          )}
-
-          {(isLoading || isFetchingNextPage) && <Loading />}
-
-          {/* Place a div below the grid that we can connect to an intersection observer */}
-          <div ref={loadMoreContainerRef} />
-
-          {hasNextPage &&
-          !isFetchingNextPage &&
-          (concatenatedPages?.length || 0) > pageSize ? (
-            <div
-              role="button"
-              style={{
-                textAlign: 'center',
-                color: colors.text.secondary,
-                cursor: 'pointer',
-                padding: 20,
-              }}
-              onClick={() => fetchNextPage()}
-            >
-              <Trans>Load more</Trans>
-            </div>
-          ) : (
-            !isLoadingSearch &&
-            !isLoadingProjects && (
-              <div
-                style={{
-                  textAlign: 'center',
-                  color: colors.text.disabled,
-                  padding: 20,
-                  paddingTop: concatenatedPages?.length === 0 ? 0 : 20,
-                }}
-              >
-                {concatenatedPages?.length}{' '}
-                {concatenatedPages?.length === 1 ? t`project` : t`projects`}{' '}
-                {searchText ? t`matching "${searchText}"` : ''}
-              </div>
-            )
-          )}
-        </>
+        <div style={{ paddingBottom: 50 }}>
+          <AllProjects
+            pv={pv}
+            searchText={searchText}
+            orderBy={orderBy}
+            showArchived={showArchived}
+          />
+        </div>
       ) : selectedTab === 'holdings' ? (
         <div style={{ paddingBottom: 50 }}>
           <HoldingsProjects />
@@ -286,9 +188,11 @@ function Projects() {
         <div style={{ paddingBottom: 50 }}>
           <TrendingProjects count={12} />
         </div>
+      ) : selectedTab === 'new' ? (
+        <div style={{ paddingBottom: 50 }}>
+          <LatestProjects />
+        </div>
       ) : null}
-
-      <FeedbackFormButton />
     </div>
   )
 }

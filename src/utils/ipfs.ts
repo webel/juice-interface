@@ -1,41 +1,19 @@
 import {
-  PinataMetadata,
-  PinataPinListResponse,
-  PinataPinResponse,
-} from '@pinata/sdk'
+  OPEN_IPFS_GATEWAY_HOSTNAME,
+  RESTRICTED_IPFS_GATEWAY_HOSTNAME,
+} from 'constants/ipfs'
+import { base58 } from 'ethers/lib/utils'
 
-import { consolidateMetadata, ProjectMetadataV4 } from 'models/project-metadata'
-import { IPFSNftRewardTier, NftRewardTier } from 'models/v2/nftRewardTier'
+const IPFS_URL_REGEX = /ipfs:\/\/(.+)/
 
-import axios from 'axios'
-
-import { IPFS_GATEWAY_HOSTNAME, DEFAULT_PINATA_GATEWAY } from 'constants/ipfs'
-
-export const IPFS_TAGS = {
-  METADATA:
-    process.env.NODE_ENV === 'production'
-      ? 'juicebox_project_metadata'
-      : 'DEV_juicebox_project_metadata',
-  LOGO:
-    process.env.NODE_ENV === 'production'
-      ? 'juicebox_project_logo'
-      : 'DEV_juicebox_project_logo',
-  NFT_REWARDS:
-    process.env.NODE_ENV === 'production'
-      ? 'juicebox_nft_reward_tier'
-      : 'DEV_juicebox_nft_reward_tier',
-}
-
-// keyvalues will be upserted to existing metadata. A null value will remove an existing keyvalue
-export const editMetadataForCid = async (
-  cid: string | undefined,
-  options?: PinataMetadata,
+/**
+ * Return a HTTP URL to the IPFS gateway at the given [hostname] for the given [cid].
+ */
+export const ipfsGatewayUrl = (
+  cid: string | undefined = '',
+  hostname: string,
 ) => {
-  if (!cid) return undefined
-
-  const pinRes = await axios.put(`/api/ipfs/pin/${cid}`, { ...options })
-
-  return pinRes.data
+  return `https://${hostname}/ipfs/${cid}`
 }
 
 export const logoNameForHandle = (handle: string) => `juicebox-@${handle}-logo`
@@ -43,136 +21,86 @@ export const logoNameForHandle = (handle: string) => `juicebox-@${handle}-logo`
 export const metadataNameForHandle = (handle: string) =>
   `juicebox-@${handle}-metadata`
 
-export const ipfsCidUrl = (
-  hash: string,
-  options: {
-    useFallback?: boolean
-  } = { useFallback: false },
-): string => {
-  const { useFallback } = options
-  if (useFallback) {
-    return `https://${DEFAULT_PINATA_GATEWAY}/ipfs/${hash}`
-  }
-  return `https://${IPFS_GATEWAY_HOSTNAME}/ipfs/${hash}`
+/**
+ * Return a URL to our open IPFS gateway for the given cid USING INFURA.
+ *
+ * The 'open' gateway returns any content that is available on IPFS,
+ * not just the content we have pinned.
+ *
+ * Its use is origin-restriced.
+ */
+export const openIpfsUrl = (cid: string | undefined): string => {
+  return ipfsGatewayUrl(cid, OPEN_IPFS_GATEWAY_HOSTNAME)
 }
 
-export const cidFromUrl = (url: string | undefined) => url?.split('/').pop()
-
-export const ipfsGetWithFallback = async (hash: string) => {
-  try {
-    const response = await axios.get(ipfsCidUrl(hash))
-    return response
-  } catch (error) {
-    try {
-      const response = await axios.get(ipfsCidUrl(hash, { useFallback: true }))
-      return response
-    } catch (error) {
-      return { data: null }
-    }
-  }
+/**
+ * Return a URL to the restricted IPFS gateway for the given cid ON PINATA.
+ *
+ * The 'restricted' gateway only returns content that we have pinned.
+ */
+export const restrictedIpfsUrl = (cid: string | undefined): string => {
+  return ipfsGatewayUrl(cid, RESTRICTED_IPFS_GATEWAY_HOSTNAME)
 }
 
-export const pinFileToIpfs = async (
-  file: File | Blob | string,
-  metadata?: PinataMetadata,
-) => {
-  const data = new FormData()
-
-  data.append('file', file)
-
-  if (metadata) {
-    data.append(
-      'pinataMetadata',
-      JSON.stringify({
-        keyvalues: metadata,
-      }),
-    )
-  }
-
-  const res = await axios.post('/api/ipfs/logo', data, {
-    maxContentLength: Infinity, //this is needed to prevent axios from erroring out with large files
-    headers: {
-      'Content-Type': `multipart/form-data;`,
-    },
-  })
-
-  return res.data as PinataPinResponse
+/**
+ * Return an IPFS URI using the IPFS URI scheme.
+ */
+export function ipfsUrl(cid: string, path?: string) {
+  return `ipfs://${cid}${path ?? ''}`
 }
 
-export const uploadProjectMetadata = async (
-  metadata: Omit<ProjectMetadataV4, 'version'>,
-  handle?: string,
-) => {
-  const res = await axios.post('/api/ipfs/pin', {
-    data: consolidateMetadata(metadata),
-    options: {
-      pinataMetadata: {
-        keyvalues: {
-          tag: IPFS_TAGS.METADATA,
-        } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-        name: handle
-          ? metadataNameForHandle(handle)
-          : 'juicebox-project-metadata.json',
-      },
-    },
-  })
+/**
+ * Return the IPFS CID from a given [url].
+ *
+ * Assumes that the last path segment is the CID.
+ * @todo this isn't a great assumption. We should make this more robust, perhaps using a regex.
+ */
+export const cidFromUrl = (url: string) => url.split('/').pop()
 
-  return res.data as PinataPinResponse
+export const cidFromPinataUrl = (url: string) => url.split('/ipfs/').pop()
+export const cidFromIpfsUri = (ipfsUri: string) =>
+  ipfsUri.match(IPFS_URL_REGEX)?.[1]
+
+/**
+ * Returns a native IPFS link (`ipfs://`) as a https link.
+ */
+export function ipfsToHttps(
+  ipfsUri: string,
+  { gatewayHostname }: { gatewayHostname?: string } = {},
+): string {
+  if (!isIpfsUrl(ipfsUri)) return ipfsUri
+
+  const suffix = cidFromIpfsUri(ipfsUri)
+  return gatewayHostname
+    ? ipfsGatewayUrl(suffix, gatewayHostname)
+    : openIpfsUrl(suffix)
 }
 
-export const getPinnedListByTag = async (tag: keyof typeof IPFS_TAGS) => {
-  const data = await axios.get(`/api/ipfs/pin?tag=${IPFS_TAGS[tag]}`)
-
-  return data.data as PinataPinListResponse
+/**
+ * Return a hex-encoded CID to store on-chain.
+ *
+ * Hex-encoded CIDs are used to store some CIDs on-chain because they are more gas-efficient.
+ */
+export function encodeIPFSUri(cid: string) {
+  return '0x' + Buffer.from(base58.decode(cid).slice(2)).toString('hex')
 }
 
-async function uploadNftRewardToIPFS(
-  rewardTier: NftRewardTier,
-): Promise<string> {
-  const ipfsNftRewardTier: IPFSNftRewardTier = {
-    description: rewardTier.description,
-    name: rewardTier.name,
-    externalLink: rewardTier.externalLink,
-    symbol: undefined,
-    image: rewardTier.imageUrl,
-    imageDataUrl: undefined,
-    artifactUri: undefined,
-    animationUri: undefined,
-    displayUri: undefined,
-    youtubeUri: undefined,
-    backgroundColor: undefined,
-    attributes: {
-      contributionFloor: rewardTier.contributionFloor,
-      maxSupply: rewardTier.maxSupply,
-    },
-  }
-  const res = await axios.post('/api/ipfs/pin', {
-    data: ipfsNftRewardTier,
-    options: {
-      pinataMetadata: {
-        keyvalues: {
-          tag: IPFS_TAGS.NFT_REWARDS,
-        } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-        name: ipfsNftRewardTier.name,
-      },
-    },
-  })
-  return res.data.IpfsHash as string
+/**
+ * Return the IPFS CID from a given hex-endoded string.
+ *
+ * Hex-encoded CIDs are used to store some CIDs on-chain because they are more gas-efficient.
+ */
+export function decodeEncodedIPFSUri(hex: string) {
+  // Add default ipfs values for first 2 bytes:
+  // - function:0x12=sha2, size:0x20=256 bits
+  // - also cut off leading "0x"
+  const hashHex = '1220' + hex.slice(2)
+  const hashBytes = Buffer.from(hashHex, 'hex')
+  const hashStr = base58.encode(hashBytes)
+  return hashStr
 }
 
-// Uploads each nft reward tier to an individual location on IPFS
-// returns an array of CIDs which point to each rewardTier on IPFS
-export async function uploadNftRewardsToIPFS(
-  nftRewards: NftRewardTier[],
-): Promise<string[]> {
-  return await Promise.all(
-    nftRewards.map(rewardTier => uploadNftRewardToIPFS(rewardTier)),
-  )
-}
-
-// returns a native IPFS link (`ipfs://cid`) as a https link
-export function formatIpfsLink(ipfsLink: string) {
-  const ipfsLinkParts = ipfsLink.split('/')
-  const cid = ipfsLinkParts[ipfsLinkParts.length - 1]
-  return `https://${DEFAULT_PINATA_GATEWAY}/ipfs/${cid}`
+// Determines if a string is a valid IPFS url.
+export function isIpfsUrl(url: string) {
+  return url.startsWith('ipfs://')
 }

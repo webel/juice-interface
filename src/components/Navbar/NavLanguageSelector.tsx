@@ -1,7 +1,6 @@
-import { CSSProperties, useContext, useEffect, useState } from 'react'
-import { Select } from 'antd'
 import { GlobalOutlined } from '@ant-design/icons'
-import { ThemeContext } from 'contexts/themeContext'
+import { Select } from 'antd'
+import { CSSProperties, useEffect, useState } from 'react'
 
 import { reloadWindow } from 'utils/windowUtils'
 
@@ -15,15 +14,11 @@ export default function NavLanguageSelector({
   disableLang?: string
   mobile?: boolean
 }) {
-  const {
-    theme: { colors },
-  } = useContext(ThemeContext)
   const selectStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-evenly',
     cursor: 'pointer',
-    height: 30,
     fontWeight: 500,
   }
 
@@ -54,9 +49,7 @@ export default function NavLanguageSelector({
   }
 
   const desktopDropdownStyle: CSSProperties = {
-    border: '1px solid ' + colors.stroke.tertiary,
     marginRight: 20,
-    boxShadow: '0px 8px 12px var(--boxShadow-primary)',
   }
 
   const selectHeader = mobile

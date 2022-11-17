@@ -1,29 +1,31 @@
 import { t, Trans } from '@lingui/macro'
 import { Modal } from 'antd'
 import InputAccessoryButton from 'components/InputAccessoryButton'
-import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
 import { emitErrorNotification } from 'utils/notifications'
 
-import { useCallback, useEffect, useState } from 'react'
-import { fromWad } from 'utils/formatNumber'
-import { querySubgraphExhaustive } from 'utils/graph'
+import { useCallback, useContext, useEffect, useState } from 'react'
+import { fromWad } from 'utils/format/formatNumber'
+import { GraphQueryOpts, querySubgraphExhaustive } from 'utils/graph'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
 
+import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
+import { PV_V1, PV_V1_1 } from 'constants/pv'
 import { readProvider } from 'constants/readProvider'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import { Participant } from 'models/subgraph-entities/vX/participant'
+import { downloadCsvFile } from 'utils/csv'
 
-export default function DownloadParticipantsModal({
-  projectId,
+export function DownloadParticipantsModal({
   tokenSymbol,
-  projectName,
-  visible,
+  open,
   onCancel,
 }: {
-  projectId: number | undefined
   tokenSymbol: string | undefined
-  projectName: string | undefined
-  visible: boolean | undefined
+  open: boolean | undefined
   onCancel: VoidFunction | undefined
 }) {
+  const { projectId, projectMetadata, pv } = useContext(ProjectMetadataContext)
+
   const [latestBlockNumber, setLatestBlockNumber] = useState<number>()
   const [blockNumber, setBlockNumber] = useState<number>()
   const [loading, setLoading] = useState<boolean>()
@@ -36,7 +38,21 @@ export default function DownloadParticipantsModal({
   }, [])
 
   const download = useCallback(async () => {
-    if (blockNumber === undefined || !projectId) return
+    if (blockNumber === undefined || !projectId || !pv) return
+
+    // Projects that migrate between 1 & 1.1 may change their PV without the PV of their participants being updated. This should be fixed by better subgraph infrastructure, but this fix will make sure the UI works for now.
+    const pvOpt: GraphQueryOpts<'participant', keyof Participant>['where'] =
+      pv === PV_V1 || pv === PV_V1_1
+        ? {
+            key: 'pv',
+            operator: 'in',
+            value: [PV_V1, PV_V1_1],
+          }
+        : {
+            key: 'pv',
+            value: pv,
+          }
+
     const rows = [
       [
         'Wallet address',
@@ -65,10 +81,13 @@ export default function DownloadParticipantsModal({
         block: {
           number: blockNumber,
         },
-        where: {
-          key: 'projectId',
-          value: projectId,
-        },
+        where: [
+          {
+            key: 'projectId',
+            value: projectId,
+          },
+          pvOpt,
+        ],
       })
 
       if (!participants) {
@@ -91,29 +110,21 @@ export default function DownloadParticipantsModal({
         ])
       })
 
-      const csvContent =
-        'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n')
-      const encodedUri = encodeURI(csvContent)
-      const link = document.createElement('a')
-      link.setAttribute('href', encodedUri)
-      link.setAttribute(
-        'download',
-        `@${projectName}_holders-block${blockNumber}.csv`,
+      downloadCsvFile(
+        `@${projectMetadata?.name}_holders-block${blockNumber}.csv`,
+        rows,
       )
-      document.body.appendChild(link)
-
-      link.click()
 
       setLoading(false)
     } catch (e) {
       console.error('Error downloading participants', e)
       setLoading(false)
     }
-  }, [blockNumber, projectId, tokenSymbol, projectName])
+  }, [blockNumber, projectId, tokenSymbol, projectMetadata, pv])
 
   return (
     <Modal
-      visible={visible}
+      open={open}
       onCancel={onCancel}
       onOk={download}
       okText={t`Download CSV`}

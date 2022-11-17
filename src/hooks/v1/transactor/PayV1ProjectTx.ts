@@ -1,11 +1,13 @@
-import { NetworkContext } from 'contexts/networkContext'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { V1UserContext } from 'contexts/v1/userContext'
+import { useWallet } from 'hooks/Wallet'
 import { useContext } from 'react'
 
 import { BigNumber } from '@ethersproject/bignumber'
-
-import { TransactorInstance } from '../../Transactor'
+import { t } from '@lingui/macro'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import { TransactorInstance } from 'hooks/Transactor'
+import { useV1ProjectTitle } from '../ProjectTitle'
 
 export function usePayV1ProjectTx(): TransactorInstance<{
   note: string
@@ -13,8 +15,11 @@ export function usePayV1ProjectTx(): TransactorInstance<{
   value: BigNumber
 }> {
   const { transactor, contracts } = useContext(V1UserContext)
-  const { terminal, projectId } = useContext(V1ProjectContext)
-  const { userAddress } = useContext(NetworkContext)
+  const { terminal } = useContext(V1ProjectContext)
+  const { projectId } = useContext(ProjectMetadataContext)
+
+  const projectTitle = useV1ProjectTitle()
+  const { userAddress } = useWallet()
 
   return ({ note, preferUnstaked, value }, txOpts) => {
     if (
@@ -55,6 +60,7 @@ export function usePayV1ProjectTx(): TransactorInstance<{
       {
         ...txOpts,
         value: value.toHexString(),
+        title: t`Pay ${projectTitle}`,
       },
     )
   }

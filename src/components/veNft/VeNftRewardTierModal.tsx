@@ -4,8 +4,8 @@ import { useForm } from 'antd/lib/form/Form'
 import { ModalMode } from 'components/formItems/formHelpers'
 import TooltipLabel from 'components/TooltipLabel'
 
-import NftUpload from 'components/v2/shared/FundingCycleConfigurationDrawers/NftDrawer/NftUpload'
-import { VeNftVariant } from 'models/v2/veNft'
+import NftUpload from 'components/v2v3/shared/FundingCycleConfigurationDrawers/NftDrawer/NftUpload'
+import { VeNftVariant } from 'models/veNft'
 import { useEffect } from 'react'
 
 import TokensStakedMinInput from 'components/veNft/formControls/TokensStakedMinInput'
@@ -18,14 +18,14 @@ export type VeNftFormFields = {
 
 export default function VeNftRewardTierModal({
   id,
-  visible,
+  open,
   onClose,
   onChange,
   mode,
   variant,
 }: {
   id: number
-  visible: boolean
+  open: boolean
   onClose: VoidFunction
   mode: ModalMode
   variant?: VeNftVariant
@@ -63,11 +63,11 @@ export default function VeNftRewardTierModal({
 
   return (
     <Modal
-      visible={visible}
-      okText={mode === 'Edit' ? t`Save NFT reward` : t`Add NFT reward`}
+      open={open}
+      okText={mode === 'Edit' ? t`Save NFT tier` : t`Add NFT tier`}
       onOk={onFormSaved}
       onCancel={onClose}
-      title={mode === 'Edit' ? t`Edit NFT reward` : t`Add NFT reward`}
+      title={mode === 'Edit' ? t`Edit NFT tier` : t`Add NFT tier`}
     >
       <Form layout="vertical" form={nftForm}>
         <TokensStakedMinInput form={nftForm} />

@@ -1,20 +1,17 @@
-import { Trans } from '@lingui/macro'
 import { CheckCircleFilled } from '@ant-design/icons'
+import { Trans } from '@lingui/macro'
 import { Button, Space } from 'antd'
 import RichButton from 'components/RichButton'
-import { useContext, useState } from 'react'
-
-import { ThemeContext } from 'contexts/themeContext'
-import NftDrawer from 'components/v2/shared/FundingCycleConfigurationDrawers/NftDrawer'
-import { featureFlagEnabled } from 'utils/featureFlags'
-
-import FundingDrawer from '../../../../components/v2/shared/FundingCycleConfigurationDrawers/FundingDrawer'
-import TokenDrawer from '../../../../components/v2/shared/FundingCycleConfigurationDrawers/TokenDrawer'
-import RulesDrawer from '../../../../components/v2/shared/FundingCycleConfigurationDrawers/RulesDrawer'
-
-import FundingCycleExplainer from '../../FundingCycleExplainer'
-import ProjectConfigurationFieldsContainer from '../../ProjectConfigurationFieldsContainer'
+import FundingDrawer from 'components/v2v3/shared/FundingCycleConfigurationDrawers/FundingDrawer'
+import NftDrawer from 'components/v2v3/shared/FundingCycleConfigurationDrawers/NftDrawer'
+import RulesDrawer from 'components/v2v3/shared/FundingCycleConfigurationDrawers/RulesDrawer'
+import TokenDrawer from 'components/v2v3/shared/FundingCycleConfigurationDrawers/TokenDrawer'
 import { FEATURE_FLAGS } from 'constants/featureFlags'
+import { ThemeContext } from 'contexts/themeContext'
+import { useContext, useState } from 'react'
+import { featureFlagEnabled } from 'utils/featureFlags'
+import FundingCycleExplainer from '../../FundingCycleExplainer'
+import { ProjectConfigurationFieldsContainer } from '../../ProjectConfigurationFieldsContainer'
 
 export default function FundingCycleTabContent({
   onFinish,
@@ -50,7 +47,15 @@ export default function FundingCycleTabContent({
   return (
     <ProjectConfigurationFieldsContainer showPreview>
       <Space direction="vertical" style={{ width: '100%' }}>
-        <FundingCycleExplainer />
+        <p>
+          <Trans>
+            Juicebox projects are funded in cycles. You can think of this as a
+            set period of time in which your project settings are locked.
+          </Trans>
+        </p>
+        <p>
+          <Trans>Configure your project's first funding cycle below.</Trans>
+        </p>
         <RichButton
           prefix="1"
           heading={<Trans>Funding</Trans>}
@@ -78,9 +83,7 @@ export default function FundingCycleTabContent({
             setTokenDrawerVisible(true)
             setTokenDrawerSeen(true)
           }}
-          description={
-            <Trans>Configure the dynamics of your project's token.</Trans>
-          }
+          description={<Trans>Configure your project's token.</Trans>}
           icon={
             tokenDrawerSeen ? (
               <CheckCircleFilled style={{ color: seenColor }} />
@@ -91,7 +94,7 @@ export default function FundingCycleTabContent({
         {isNftRewardsEnabled ? (
           <RichButton
             prefix="3"
-            heading={<Trans>NFT rewards</Trans>}
+            heading={<Trans>NFTs</Trans>}
             onClick={() => {
               setNftDrawerVisible(true)
               setNftDrawerSeen(true)
@@ -124,6 +127,8 @@ export default function FundingCycleTabContent({
           primaryColor={rulesDrawerSeen ? seenColor : undefined}
         />
 
+        <FundingCycleExplainer />
+
         <Button
           type="primary"
           onClick={onFinish}
@@ -134,17 +139,13 @@ export default function FundingCycleTabContent({
         </Button>
       </Space>
       <FundingDrawer
-        visible={fundingDrawerVisible}
+        open={fundingDrawerVisible}
         onClose={closeDrawer}
         isCreate
       />
-      <TokenDrawer
-        visible={tokenDrawerVisible}
-        onClose={closeDrawer}
-        isCreate
-      />
-      <NftDrawer visible={NftDrawerVisible} onClose={closeDrawer} />
-      <RulesDrawer visible={rulesDrawerVisible} onClose={closeDrawer} />
+      <TokenDrawer open={tokenDrawerVisible} onClose={closeDrawer} isCreate />
+      <NftDrawer open={NftDrawerVisible} onClose={closeDrawer} />
+      <RulesDrawer open={rulesDrawerVisible} onClose={closeDrawer} />
     </ProjectConfigurationFieldsContainer>
   )
 }

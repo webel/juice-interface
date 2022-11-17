@@ -1,10 +1,11 @@
+import { InfoCircleOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 import { Button, Col, Divider, Row } from 'antd'
 import ExternalLink from 'components/ExternalLink'
-import { CSSProperties } from 'react'
-import { InfoCircleOutlined } from '@ant-design/icons'
 import useMobile from 'hooks/Mobile'
-import { helpPagePath } from 'utils/helpPageHelper'
+import Image from 'next/image'
+import { CSSProperties } from 'react'
+import { helpPagePath } from 'utils/routes'
 
 import { OverflowVideoLink } from './QAs'
 import { SectionHeading } from './SectionHeading'
@@ -55,13 +56,12 @@ export function HowItWorksSection() {
         <Row align="middle">
           {!isMobile && (
             <Col xs={24} sm={11}>
-              <img
+              <Image
                 style={{
-                  maxHeight: 480,
-                  maxWidth: '100%',
-                  objectFit: 'contain',
                   marginBottom: 40,
                 }}
+                width={486}
+                height={486}
                 src="/assets/pina.png"
                 alt="Pinepple geek artist holding a paintbrush"
                 loading="lazy"

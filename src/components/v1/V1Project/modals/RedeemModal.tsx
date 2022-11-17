@@ -1,35 +1,46 @@
 import { t, Trans } from '@lingui/macro'
-import { Modal, Space, Form } from 'antd'
+import { Form, Modal, Space } from 'antd'
 import { useForm } from 'antd/lib/form/Form'
-
 import ETHAmount from 'components/currency/ETHAmount'
 import InputAccessoryButton from 'components/InputAccessoryButton'
 import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
-
-import { NetworkContext } from 'contexts/networkContext'
-import { V1ProjectContext } from 'contexts/v1/projectContext'
+import { RedeemAMMPrices } from 'components/Project/RedeemAMMPrices'
+import { V1_CURRENCY_USD } from 'constants/v1/currency'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
 import { ThemeContext } from 'contexts/themeContext'
+import { V1ProjectContext } from 'contexts/v1/projectContext'
 import useClaimableOverflowOf from 'hooks/v1/contractReader/ClaimableOverflowOf'
 import { useRedeemRate } from 'hooks/v1/contractReader/RedeemRate'
 import useTotalBalanceOf from 'hooks/v1/contractReader/TotalBalanceOf'
 import { useRedeemTokensTx } from 'hooks/v1/transactor/RedeemTokensTx'
+import { useWallet } from 'hooks/Wallet'
 import { CSSProperties, useContext, useState } from 'react'
-import { formattedNum, formatWad, fromWad, parseWad } from 'utils/formatNumber'
-import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
+import {
+  formattedNum,
+  formatWad,
+  fromWad,
+  parseWad,
+} from 'utils/format/formatNumber'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
-
-import { V1_CURRENCY_USD } from 'constants/v1/currency'
+import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
 
 // This double as the 'Redeem' and 'Burn' modal depending on if project has overflow
 export default function RedeemModal({
-  visible,
+  open,
   onOk,
   onCancel,
 }: {
-  visible?: boolean
+  open?: boolean
   onOk?: VoidFunction
   onCancel?: VoidFunction
 }) {
+  const {
+    theme: { colors },
+  } = useContext(ThemeContext)
+  const { tokenSymbol, tokenAddress, currentFC, terminal, overflow } =
+    useContext(V1ProjectContext)
+  const { projectId } = useContext(ProjectMetadataContext)
+
   const [redeemAmount, setRedeemAmount] = useState<string>()
   const [loading, setLoading] = useState<boolean>()
   const redeemTokensTx = useRedeemTokensTx()
@@ -38,19 +49,10 @@ export default function RedeemModal({
     redeemAmount: string
   }>()
 
-  const {
-    theme: { colors },
-  } = useContext(ThemeContext)
-  const { userAddress } = useContext(NetworkContext)
-  const { projectId, tokenSymbol, currentFC, terminal, overflow } =
-    useContext(V1ProjectContext)
-
   const fcMetadata = decodeFundingCycleMetadata(currentFC?.metadata)
-
+  const { userAddress } = useWallet()
   const totalBalance = useTotalBalanceOf(userAddress, projectId, terminal?.name)
-
   const maxClaimable = useClaimableOverflowOf()
-
   const rewardAmount = useRedeemRate({
     tokenAmount: redeemAmount,
     fundingCycle: currentFC,
@@ -90,13 +92,13 @@ export default function RedeemModal({
   }
 
   const tokensTextLong = tokenSymbolText({
-    tokenSymbol: tokenSymbol,
+    tokenSymbol,
     capitalize: false,
     plural: true,
     includeTokenWord: true,
   })
   const tokensTextShort = tokenSymbolText({
-    tokenSymbol: tokenSymbol,
+    tokenSymbol,
     capitalize: false,
     plural: true,
   })
@@ -135,7 +137,7 @@ export default function RedeemModal({
   return (
     <Modal
       title={modalTitle}
-      visible={visible}
+      open={open}
       confirmLoading={loading}
       onOk={() => {
         redeem()
@@ -164,8 +166,7 @@ export default function RedeemModal({
             </span>
           </p>
           <p style={statsStyle}>
-            {tokenSymbolText({ tokenSymbol: tokenSymbol, capitalize: true })}{' '}
-            balance:{' '}
+            {tokenSymbolText({ tokenSymbol, capitalize: true })} balance:{' '}
             <span>
               {formatWad(totalBalance ?? 0, { precision: 0 })} {tokensTextShort}
             </span>
@@ -204,23 +205,32 @@ export default function RedeemModal({
               if (e.key === 'Enter') redeem()
             }}
           >
-            <FormattedNumberInput
-              min={0}
-              step={0.001}
-              placeholder="0"
-              value={redeemAmount}
-              accessory={
-                <InputAccessoryButton
-                  content={t`MAX`}
-                  onClick={() => setRedeemAmount(fromWad(totalBalance))}
+            <Form.Item
+              name="redeemAmount"
+              rules={[{ validator: validateRedeemAmount }]}
+            >
+              <FormattedNumberInput
+                min={0}
+                step={0.001}
+                placeholder="0"
+                value={redeemAmount}
+                accessory={
+                  <InputAccessoryButton
+                    content={t`MAX`}
+                    onClick={() => setRedeemAmount(fromWad(totalBalance))}
+                  />
+                }
+                disabled={totalBalance?.eq(0)}
+                onChange={val => setRedeemAmount(val)}
+              />
+              {tokenSymbol && tokenAddress ? (
+                <RedeemAMMPrices
+                  tokenSymbol={tokenSymbol}
+                  tokenAddress={tokenAddress}
+                  style={{ fontSize: '0.75rem' }}
                 />
-              }
-              formItemProps={{
-                rules: [{ validator: validateRedeemAmount }],
-              }}
-              disabled={totalBalance?.eq(0)}
-              onChange={val => setRedeemAmount(val)}
-            />
+              ) : null}
+            </Form.Item>
           </Form>
           {overflow?.gt(0) ? (
             <div style={{ fontWeight: 500, marginTop: 20 }}>

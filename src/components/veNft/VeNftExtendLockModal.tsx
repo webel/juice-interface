@@ -1,19 +1,19 @@
-import { Form } from 'antd'
 import { BigNumber } from '@ethersproject/bignumber'
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { t, Trans } from '@lingui/macro'
+import { Form } from 'antd'
 import { ThemeContext } from 'contexts/themeContext'
 import { useExtendLockTx } from 'hooks/veNft/transactor/VeNftExtendLockTx'
-import { NetworkContext } from 'contexts/networkContext'
-import { t, Trans } from '@lingui/macro'
-import { emitSuccessNotification } from 'utils/notifications'
 import { VeNftToken } from 'models/subgraph-entities/v2/venft-token'
+import { useContext, useEffect, useMemo, useState } from 'react'
+import { emitSuccessNotification } from 'utils/notifications'
 
 import TransactionModal from 'components/TransactionModal'
 import LockDurationSelectInput from 'components/veNft/formControls/LockDurationSelectInput'
-import { VeNftContext } from 'contexts/v2/veNftContext'
+import { useVeNftLockDurationOptions } from 'hooks/veNft/VeNftLockDurationOptions'
+import { useWallet } from 'hooks/Wallet'
 
 type VeNftExtendLockModalProps = {
-  visible: boolean
+  open: boolean
   token: VeNftToken
   onCancel: VoidFunction
   onCompleted: VoidFunction
@@ -24,14 +24,14 @@ interface ExtendLockFormProps {
 }
 
 const VeNftExtendLockModal = ({
-  visible,
+  open,
   token,
   onCancel,
   onCompleted,
 }: VeNftExtendLockModalProps) => {
-  const { userAddress, onSelectWallet } = useContext(NetworkContext)
+  const { chainUnsupported, isConnected, changeNetworks, connect } = useWallet()
   const { tokenId } = token
-  const { lockDurationOptions } = useContext(VeNftContext)
+  const { data: lockDurationOptions } = useVeNftLockDurationOptions()
   const [form] = Form.useForm<ExtendLockFormProps>()
   const [loading, setLoading] = useState(false)
   const [transactionPending, setTransactionPending] = useState(false)
@@ -59,8 +59,13 @@ const VeNftExtendLockModal = ({
   const extendLockTx = useExtendLockTx()
 
   const extendLock = async () => {
-    if (!userAddress && onSelectWallet) {
-      onSelectWallet()
+    if (chainUnsupported) {
+      await changeNetworks()
+      return
+    }
+    if (!isConnected) {
+      await connect()
+      return
     }
 
     const lockDuration = form.getFieldValue('lockDuration')
@@ -94,7 +99,7 @@ const VeNftExtendLockModal = ({
 
   return (
     <TransactionModal
-      visible={visible}
+      open={open}
       title={t`Extend Lock`}
       onCancel={onCancel}
       onOk={extendLock}

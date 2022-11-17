@@ -1,16 +1,16 @@
 import { i18n } from '@lingui/core'
 import {
   detect,
-  fromUrl,
-  fromStorage,
   fromNavigator,
+  fromStorage,
+  fromUrl,
 } from '@lingui/detect-locale'
 import { I18nProvider } from '@lingui/react'
-import { ReactNode, useEffect } from 'react'
-import { en, zh, ru, tr, es, pt, fr } from 'make-plural/plurals'
 import defaultLocale from 'locales/en/messages'
+import { en, es, fr, pt, ru, tr, zh } from 'make-plural/plurals'
+import { ReactNode, useEffect } from 'react'
 
-import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from 'constants/locale'
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from 'constants/locale'
 
 // load plural configs
 i18n.loadLocaleData({
@@ -53,6 +53,10 @@ const dynamicActivate = async (locale: string) => {
     activateDefaultLocale()
   }
 }
+
+// TODO eventually we need to uncomment the below line.
+// https://github.com/jbx-protocol/juice-interface/issues/2391
+// activateDefaultLocale()
 
 export default function LanguageProvider({
   children,

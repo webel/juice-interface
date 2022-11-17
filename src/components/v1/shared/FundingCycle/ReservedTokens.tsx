@@ -1,22 +1,23 @@
+import { Trans } from '@lingui/macro'
 import { Button } from 'antd'
-import { t, Trans } from '@lingui/macro'
 import TooltipLabel from 'components/TooltipLabel'
 
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import useReservedTokensOfProject from 'hooks/v1/contractReader/ReservedTokensOfProject'
-import { V1FundingCycle } from 'models/v1/fundingCycle'
 import { TicketMod } from 'models/mods'
 import { NetworkName } from 'models/network-name'
+import { V1FundingCycle } from 'models/v1/fundingCycle'
 import { useContext, useState } from 'react'
-import { formatWad, perbicentToPercent } from 'utils/formatNumber'
-import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
+import { formatWad, perbicentToPercent } from 'utils/format/formatNumber'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
+import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
 
 import { readNetwork } from 'constants/networks'
 
-import DistributeTokensModal from './modals/DistributeTokensModal'
-import TicketModsList from '../TicketModsList'
 import { V1_PROJECT_IDS } from 'constants/v1/projectIds'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import TicketModsList from '../TicketModsList'
+import DistributeTokensModal from './modals/DistributeTokensModal'
 
 export default function ReservedTokens({
   fundingCycle,
@@ -27,9 +28,10 @@ export default function ReservedTokens({
   ticketMods: TicketMod[] | undefined
   hideActions?: boolean
 }) {
-  const [modalIsVisible, setModalIsVisible] = useState<boolean>()
+  const { tokenSymbol, isPreviewMode } = useContext(V1ProjectContext)
+  const { projectId } = useContext(ProjectMetadataContext)
 
-  const { projectId, tokenSymbol, isPreviewMode } = useContext(V1ProjectContext)
+  const [modalIsVisible, setModalIsVisible] = useState<boolean>()
 
   const metadata = decodeFundingCycleMetadata(fundingCycle?.metadata)
 
@@ -54,7 +56,7 @@ export default function ReservedTokens({
               <Trans>
                 Reserved{' '}
                 {tokenSymbolText({
-                  tokenSymbol: tokenSymbol,
+                  tokenSymbol,
                   capitalize: false,
                   plural: true,
                 })}
@@ -62,7 +64,13 @@ export default function ReservedTokens({
               ({perbicentToPercent(metadata?.reservedRate)}%)
             </h4>
           }
-          tip={t`A project can reserve a percentage of the tokens minted from payments it receives. Reserved tokens can be distributed according to the allocation below at any time.`}
+          tip={
+            <Trans>
+              A project can reserve a percentage of tokens minted from every
+              payment it receives. Reserved tokens can be distributed according
+              to the allocation below at any time.
+            </Trans>
+          }
         />
       </div>
 
@@ -100,7 +108,7 @@ export default function ReservedTokens({
           </Button>
 
           <DistributeTokensModal
-            visible={modalIsVisible}
+            open={modalIsVisible}
             reservedRate={parseFloat(
               perbicentToPercent(metadata?.reservedRate),
             )}

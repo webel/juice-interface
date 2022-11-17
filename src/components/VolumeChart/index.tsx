@@ -1,8 +1,9 @@
-import { Select, Space } from 'antd'
 import { t, Trans } from '@lingui/macro'
+import { Select, Space } from 'antd'
 import CurrencySymbol from 'components/CurrencySymbol'
 
 import { ThemeContext } from 'contexts/themeContext'
+import { PV } from 'models/pv'
 import moment from 'moment'
 import {
   CSSProperties,
@@ -22,13 +23,13 @@ import {
   YAxis,
 } from 'recharts'
 
-import { EventRef, ShowGraph } from './types'
+import { daysToMillis } from './daysToMillis'
 import { useDuration } from './hooks/useDuration'
 import { loadBlockRefs } from './loadBlockRefs'
-import { loadProjectEvents } from './loadProjectEvents'
 import { loadDomain } from './loadDomain'
+import { loadProjectEvents } from './loadProjectEvents'
 import { loadTapEvents } from './loadTapEvents'
-import { daysToMillis } from './daysToMillis'
+import { EventRef, ShowGraph } from './types'
 
 const now = moment.now() - 5 * 60 * 1000 // 5 min ago
 
@@ -36,12 +37,12 @@ export default function VolumeChart({
   style: { height },
   createdAt,
   projectId,
-  cv,
+  pv,
 }: {
   style: { height: number }
   createdAt: number | undefined
   projectId: number | undefined
-  cv: string
+  pv: PV
 }) {
   const [events, setEvents] = useState<EventRef[]>([])
   // const [blockRefs, setBlockRefs] = useState<BlockRef[]>([])
@@ -72,7 +73,7 @@ export default function VolumeChart({
         blockRefs,
         showGraph,
         projectId,
-        cv,
+        pv,
       })
       if (!projectEvents) return
       const domain = loadDomain(projectEvents)
@@ -94,10 +95,10 @@ export default function VolumeChart({
       setLoading(false)
     })
     // loadEvents(blockRefs)
-  }, [cv, duration, projectId, showGraph])
+  }, [pv, duration, projectId, showGraph])
 
   const buttonStyle: CSSProperties = {
-    fontSize: '0.7rem',
+    fontSize: '0.75rem',
     textTransform: 'uppercase',
   }
 
@@ -296,7 +297,7 @@ export default function VolumeChart({
                   >
                     <div
                       style={{
-                        fontSize: '0.7rem',
+                        fontSize: '0.75rem',
                         color: colors.text.tertiary,
                       }}
                     >
@@ -308,7 +309,7 @@ export default function VolumeChart({
                         {payload[0].payload.tapped}
                         <div
                           style={{
-                            fontSize: '0.7rem',
+                            fontSize: '0.75rem',
                             fontWeight: 500,
                             color: colors.text.secondary,
                           }}

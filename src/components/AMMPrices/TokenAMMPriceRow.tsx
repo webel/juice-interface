@@ -1,10 +1,11 @@
-import { LinkOutlined, LoadingOutlined } from '@ant-design/icons'
+import { LoadingOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 import { Tooltip } from 'antd'
 import SushiswapLogo from 'components/icons/Sushiswap'
 import UniswapLogo from 'components/icons/Uniswap'
+import { ONE_TRILLION } from 'constants/numbers'
 import { CSSProperties } from 'react'
-import { formattedNum } from 'utils/formatNumber'
+import { formatOrTruncate } from 'utils/format/formatNumber'
 
 import ExternalLink from '../ExternalLink'
 
@@ -27,7 +28,7 @@ type Props = {
 }
 
 const fontStyle = {
-  fontSize: '0.7rem',
+  fontSize: '0.75rem',
   fontWeight: 400,
 }
 
@@ -56,6 +57,14 @@ export default function TokenAMMPriceRow({
     )
   }
 
+  const formatPrice = (price: string) => {
+    const p = parseInt(price, 10)
+    const formatLimit = ONE_TRILLION
+
+    // format all values below trillion value, otherwise truncate is as long number.
+    return formatOrTruncate(p, formatLimit)
+  }
+
   return (
     <div
       style={{
@@ -72,7 +81,6 @@ export default function TokenAMMPriceRow({
         </span>
         {exchangeName}
       </div>
-
       {loading && <LoadingOutlined />}
 
       {!loading &&
@@ -82,8 +90,7 @@ export default function TokenAMMPriceRow({
             overlayInnerStyle={{ ...fontStyle }}
           >
             <ExternalLink href={exchangeLink} style={{ fontWeight: 400 }}>
-              {`${formattedNum(WETHPrice)} ${tokenSymbol}/1 ETH`}
-              <LinkOutlined style={{ marginLeft: '0.2rem' }} />
+              {`${formatPrice(WETHPrice)} ${tokenSymbol}/1 ETH`}
             </ExternalLink>
           </Tooltip>
         ) : (

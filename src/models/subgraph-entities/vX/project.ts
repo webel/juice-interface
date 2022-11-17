@@ -4,12 +4,7 @@ import {
   ParticipantJson,
 } from 'models/subgraph-entities/vX/participant'
 
-import { CV } from '../../cv'
-import {
-  DeployedERC20Event,
-  DeployedERC20EventJson,
-  parseDeployedERC20EventJson,
-} from './deployed-erc20-event'
+import { PV } from '../../pv'
 import {
   DistributeToPayoutModEvent,
   DistributeToPayoutModEventJson,
@@ -20,34 +15,39 @@ import {
   DistributeToTicketModEventJson,
   parseDistributeToTicketModEvent,
 } from '../v1/distribute-to-ticket-mod-event'
-import { Participant } from './participant'
-import { parsePayEventJson, PayEvent, PayEventJson } from './pay-event'
-import {
-  parseMintTokensEventJson,
-  MintTokensEvent,
-  MintTokensEventJson,
-} from './mint-tokens-event'
 import {
   parsePrintReservesEventJson,
   PrintReservesEvent,
   PrintReservesEventJson,
 } from '../v1/print-reserves-event'
-import {
-  parseRedeemEventJson,
-  RedeemEvent,
-  RedeemEventJson,
-} from './redeem-event'
 import { parseTapEventJson, TapEvent, TapEventJson } from '../v1/tap-event'
 import {
   parseVeNftContractJson,
   VeNftContract,
   VeNftContractJson,
 } from '../v2/venft-contract'
+import {
+  DeployedERC20Event,
+  DeployedERC20EventJson,
+  parseDeployedERC20EventJson,
+} from './deployed-erc20-event'
+import {
+  MintTokensEvent,
+  MintTokensEventJson,
+  parseMintTokensEventJson,
+} from './mint-tokens-event'
+import { Participant } from './participant'
+import { parsePayEventJson, PayEvent, PayEventJson } from './pay-event'
+import {
+  parseRedeemEventJson,
+  RedeemEvent,
+  RedeemEventJson,
+} from './redeem-event'
 
 type BaseProject = {
   id: string
   projectId: number
-  cv: CV
+  pv: PV
   owner: string
   createdAt: number
   trendingPaymentsCount: number
@@ -67,20 +67,19 @@ type BaseProject = {
   distributeToTicketModEvents: Partial<DistributeToTicketModEvent>[]
   deployedERC20Events: Partial<DeployedERC20Event>[]
   veNftContract: Partial<VeNftContract>
+  metadataUri: string
 }
 
 type ProjectV1 = {
   terminal: string
-  metadataUri: string
   metadataDomain: null
   handle: string
 } & BaseProject
 
 type ProjectV2 = {
   terminal: null
-  metadataUri: string
   metadataDomain: BigNumber
-  handle: null
+  handle: string | null
 } & BaseProject
 
 export type Project = ProjectV1 | ProjectV2 // Separate entity used for testing

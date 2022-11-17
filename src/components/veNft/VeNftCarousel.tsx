@@ -1,5 +1,5 @@
-import { Row, FormInstance } from 'antd'
-import { VeNftTokenMetadata, VeNftVariant } from 'models/v2/veNft'
+import { FormInstance, Row } from 'antd'
+import { VeNftTokenMetadata, VeNftVariant } from 'models/veNft'
 
 import VeNftCarouselItem from 'components/veNft/VeNftCarouselItem'
 

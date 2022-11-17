@@ -37,6 +37,9 @@
     }
   }
 }
+.ant-collapse.minimal.light .ant-collapse-header-text {
+  font-weight: 400;
+}
 
 // Top Nav Select
 // Right side of the top nav
@@ -94,9 +97,6 @@
     padding: 7px 0 15px;
     border: none;
     border-bottom: 1px solid var(--stroke-secondary);
-  }
-  .nav-menu-item {
-    padding: 10px 15px;
   }
 
   .nav-subsection {
@@ -159,7 +159,7 @@
 }
 
 .ant-collapse-header-text-primary .ant-collapse-item .ant-collapse-header {
-  color: var(--text-primary)
+  color: var(--text-primary);
 }
 
 .ant-collapse-header-p-0 .ant-collapse-item .ant-collapse-header {
@@ -167,5 +167,5 @@
 }
 
 .ant-collapse-header-text {
-  width: 100%
+  width: 100%;
 }

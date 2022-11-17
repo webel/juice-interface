@@ -5,6 +5,7 @@ export const topNavStyles: CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   background: 'var(--background-l0)',
+  zIndex: 1,
 }
 
 export const topRightNavStyles: CSSProperties = {
@@ -22,9 +23,4 @@ export const navMenuItemStyles: CSSProperties = {
   alignItems: 'center',
   fontWeight: 600,
   color: 'var(--text-primary)',
-}
-
-export const navDropdownItem: CSSProperties = {
-  color: 'var(--text-primary)',
-  fontWeight: 500,
 }

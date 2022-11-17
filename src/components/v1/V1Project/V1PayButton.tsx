@@ -1,30 +1,32 @@
 import { t, Trans } from '@lingui/macro'
 import { Button, Tooltip } from 'antd'
 import ETHAmount from 'components/currency/ETHAmount'
-import { V1ProjectContext } from 'contexts/v1/projectContext'
-import { useContext, useState } from 'react'
-import { fromWad } from 'utils/formatNumber'
-import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
-import useWeiConverter from 'hooks/WeiConverter'
 import PayWarningModal from 'components/PayWarningModal'
-import { V1CurrencyOption } from 'models/v1/currencyOption'
-import { PayButtonProps } from 'components/inputs/Pay/PayInputGroup'
-
+import {
+  PayButtonProps,
+  PayProjectFormContext,
+} from 'components/Project/PayProjectForm/payProjectFormContext'
 import { readNetwork } from 'constants/networks'
+import { V1_CURRENCY_USD } from 'constants/v1/currency'
 import { disablePayOverrides } from 'constants/v1/overrides'
 import { V1_PROJECT_IDS } from 'constants/v1/projectIds'
-import { V1_CURRENCY_USD } from 'constants/v1/currency'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import { V1ProjectContext } from 'contexts/v1/projectContext'
+import useWeiConverter from 'hooks/WeiConverter'
+import { V1CurrencyOption } from 'models/v1/currencyOption'
+import { useContext, useState } from 'react'
+import { fromWad } from 'utils/format/formatNumber'
+import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
 import V1ConfirmPayOwnerModal from './modals/V1ConfirmPayOwnerModal'
 
-export default function V1PayButton({
-  payAmount,
-  payInCurrency,
-  onError,
-  wrapperStyle,
-  disabled,
-}: PayButtonProps) {
-  const { projectId, currentFC, metadata, isArchived, terminal } =
-    useContext(V1ProjectContext)
+export function V1PayButton({ wrapperStyle, disabled }: PayButtonProps) {
+  const { currentFC, terminal } = useContext(V1ProjectContext)
+  const { projectId, isArchived, projectMetadata } = useContext(
+    ProjectMetadataContext,
+  )
+
+  const { form: payProjectForm } = useContext(PayProjectFormContext)
+  const { payInCurrency, payAmount, setErrorMessage } = payProjectForm ?? {}
 
   const [payModalVisible, setPayModalVisible] = useState<boolean>(false)
   const [payWarningModalVisible, setPayWarningModalVisible] =
@@ -35,13 +37,15 @@ export default function V1PayButton({
     amount: payAmount,
   })
 
-  if (!metadata || !currentFC) return null
+  if (!projectMetadata || !currentFC) return null
 
   const fcMetadata = decodeFundingCycleMetadata(currentFC?.metadata)
 
   if (!fcMetadata) return null
 
-  const payButtonText = metadata.payButton?.length ? metadata.payButton : t`Pay`
+  const payButtonText = projectMetadata.payButton?.length
+    ? projectMetadata.payButton
+    : t`Pay`
 
   // v1 projects who still use 100% RR to disable pay
   const isV1AndMaxRR =
@@ -78,7 +82,7 @@ export default function V1PayButton({
 
   const onPayButtonClick = () => {
     if (parseFloat(fromWad(weiPayAmt)) === 0) {
-      return onError()
+      setErrorMessage?.(t`Payment amount can't be 0`)
     }
 
     setPayWarningModalVisible(true)
@@ -90,7 +94,7 @@ export default function V1PayButton({
       <Tooltip
         title={disabledMessage}
         className="block"
-        visible={disabledMessage ? undefined : false}
+        open={disabledMessage ? undefined : false}
       >
         <Button
           style={{ width: '100%' }}
@@ -102,14 +106,14 @@ export default function V1PayButton({
         </Button>
       </Tooltip>
       {payInCurrency === V1_CURRENCY_USD && (
-        <div style={{ fontSize: '.7rem' }}>
+        <div style={{ fontSize: '0.75rem' }}>
           <Trans>
             Paid as <ETHAmount amount={weiPayAmt} />
           </Trans>
         </div>
       )}
       <PayWarningModal
-        visible={payWarningModalVisible}
+        open={payWarningModalVisible}
         onOk={() => {
           setPayWarningModalVisible(false)
           setPayModalVisible(true)
@@ -117,7 +121,7 @@ export default function V1PayButton({
         onCancel={() => setPayWarningModalVisible(false)}
       />
       <V1ConfirmPayOwnerModal
-        visible={payModalVisible}
+        open={payModalVisible}
         onSuccess={() => setPayModalVisible(false)}
         onCancel={() => setPayModalVisible(false)}
         weiAmount={weiPayAmt}

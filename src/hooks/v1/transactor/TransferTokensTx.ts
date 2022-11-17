@@ -1,35 +1,67 @@
-import { NetworkContext } from 'contexts/networkContext'
+import { BigNumber } from '@ethersproject/bignumber'
+import { t } from '@lingui/macro'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { V1UserContext } from 'contexts/v1/userContext'
-import { BigNumber } from '@ethersproject/bignumber'
+import { useWallet } from 'hooks/Wallet'
 import { useContext } from 'react'
 
-import { TransactorInstance } from '../../Transactor'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import {
+  handleTransactionException,
+  TransactorInstance,
+} from 'hooks/Transactor'
+import invariant from 'tiny-invariant'
+import { tokenSymbolText } from 'utils/tokenSymbolText'
 
 export function useTransferTokensTx(): TransactorInstance<{
   amount: BigNumber
   to: string
 }> {
   const { transactor, contracts } = useContext(V1UserContext)
-  const { userAddress } = useContext(NetworkContext)
-  const { projectId } = useContext(V1ProjectContext)
+  const { userAddress } = useWallet()
+  const { tokenSymbol } = useContext(V1ProjectContext)
+  const { projectId } = useContext(ProjectMetadataContext)
 
   return ({ amount, to }, txOpts) => {
-    if (!transactor || !projectId || !contracts?.Projects) {
-      txOpts?.onDone?.()
-      return Promise.resolve(false)
-    }
+    try {
+      invariant(transactor && projectId && contracts?.Projects)
 
-    return transactor(
-      contracts.TicketBooth,
-      'transfer',
-      [
-        userAddress,
-        BigNumber.from(projectId).toHexString(),
-        amount.toHexString(),
-        to,
-      ],
-      txOpts,
-    )
+      return transactor(
+        contracts.TicketBooth,
+        'transfer',
+        [
+          userAddress,
+          BigNumber.from(projectId).toHexString(),
+          amount.toHexString(),
+          to,
+        ],
+        {
+          ...txOpts,
+          title: t`Transfer unclaimed ${tokenSymbolText({
+            tokenSymbol,
+            plural: true,
+          })}`,
+        },
+      )
+    } catch {
+      const missingParam = !transactor
+        ? 'transactor'
+        : !projectId
+        ? 'projectId'
+        : !contracts?.Projects
+        ? 'contracts.Projects'
+        : !amount
+        ? 'amount'
+        : !to
+        ? 'to'
+        : undefined
+
+      return handleTransactionException({
+        txOpts,
+        missingParam,
+        functionName: 'transfer',
+        cv: '1',
+      })
+    }
   }
 }

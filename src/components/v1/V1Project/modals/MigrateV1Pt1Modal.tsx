@@ -1,18 +1,18 @@
+import { BigNumber } from '@ethersproject/bignumber'
 import { Trans } from '@lingui/macro'
 import { Button, Modal } from 'antd'
 import ExternalLink from 'components/ExternalLink'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
-import { BigNumber } from '@ethersproject/bignumber'
 import { useAddToBalanceTx } from 'hooks/v1/transactor/AddToBalanceTx'
 import { useMigrateV1ProjectTx } from 'hooks/v1/transactor/MigrateV1ProjectTx'
 import { useContext, useState } from 'react'
 import { getTerminalAddress } from 'utils/v1/terminals'
 
 export default function MigrateV1Pt1Modal({
-  visible,
+  open,
   onCancel,
 }: {
-  visible: boolean
+  open: boolean
   onCancel: VoidFunction
 }) {
   const [loadingAddToBalance, setLoadingAddToBalance] = useState<boolean>()
@@ -54,7 +54,7 @@ export default function MigrateV1Pt1Modal({
 
   return (
     <Modal
-      visible={visible}
+      open={open}
       onOk={migrate}
       onCancel={onCancel}
       okText="Migrate to V1.1"

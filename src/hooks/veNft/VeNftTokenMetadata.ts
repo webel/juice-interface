@@ -1,9 +1,10 @@
-import { VeNftTokenMetadata } from 'models/v2/veNft'
+import { ipfsGetWithFallback } from 'lib/api/ipfs'
+import { VeNftTokenMetadata } from 'models/veNft'
 import { useQuery } from 'react-query'
-import { ipfsGetWithFallback } from 'utils/ipfs'
 
 export function useVeNftTokenMetadata(tokenUri: string | undefined) {
   const hash = tokenUri ? tokenUri.split('ipfs://')[1] : undefined
+
   return useQuery(
     ['nft-metadata', hash],
     async () => {

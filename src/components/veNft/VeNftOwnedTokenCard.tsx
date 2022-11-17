@@ -2,21 +2,21 @@ import {
   Button,
   Card,
   Col,
-  Row,
+  Descriptions,
   Image,
+  Row,
   Space,
   Tooltip,
-  Descriptions,
 } from 'antd'
 
 import { ThemeContext } from 'contexts/themeContext'
 
 import { CSSProperties, useContext, useState } from 'react'
-import { formattedNum, fromWad } from 'utils/formatNumber'
-import { detailedTimeString } from 'utils/formatTime'
+import { formattedNum, fromWad } from 'utils/format/formatNumber'
+import { detailedTimeString } from 'utils/format/formatTime'
 
-import { useVeNftTokenMetadata } from 'hooks/veNft/VeNftTokenMetadata'
 import { t, Trans } from '@lingui/macro'
+import { useVeNftTokenMetadata } from 'hooks/veNft/VeNftTokenMetadata'
 import { VeNftToken } from 'models/subgraph-entities/v2/venft-token'
 
 import VeNftExtendLockModal from './VeNftExtendLockModal'
@@ -127,19 +127,19 @@ export default function OwnedVeNftCard({
         </Space>
       </div>
       <VeNftExtendLockModal
-        visible={extendLockModalVisible}
+        open={extendLockModalVisible}
         onCancel={() => setExtendLockModalVisible(false)}
         token={token}
         onCompleted={() => setExtendLockModalVisible(false)}
       />
       <VeNftRedeemModal
-        visible={redeemModalVisible}
+        open={redeemModalVisible}
         onCancel={() => setRedeemModalVisible(false)}
         token={token}
         onCompleted={() => setRedeemModalVisible(false)}
       />
       <VeNftUnlockModal
-        visible={unlockModalVisible}
+        open={unlockModalVisible}
         onCancel={() => setUnlockModalVisible(false)}
         token={token}
         onCompleted={() => setUnlockModalVisible(false)}

@@ -1,14 +1,20 @@
 import { t, Trans } from '@lingui/macro'
 import { Modal, ModalProps } from 'antd'
-import { NetworkContext } from 'contexts/networkContext'
-
+import { readNetwork } from 'constants/networks'
 import { ThemeContext } from 'contexts/themeContext'
-import { PropsWithChildren, useContext } from 'react'
+import { TxHistoryContext } from 'contexts/txHistoryContext'
+import { useWallet } from 'hooks/Wallet'
+import { TxStatus } from 'models/transaction'
+import Image from 'next/image'
+import { PropsWithChildren, useContext, useMemo } from 'react'
+import EtherscanLink from './EtherscanLink'
+import quint from '/public/assets/quint.gif'
 
 type TransactionModalProps = PropsWithChildren<
   ModalProps & {
     transactionPending?: boolean
     connectWalletText?: string
+    switchNetworkText?: string
   }
 >
 
@@ -16,6 +22,10 @@ const PendingTransactionModalBody = () => {
   const {
     theme: { colors },
   } = useContext(ThemeContext)
+  const { transactions } = useContext(TxHistoryContext)
+
+  const pendingTx = transactions?.find(tx => tx.status === TxStatus.pending)
+  const pendingTxHash = pendingTx?.tx?.hash
 
   return (
     <div
@@ -29,10 +39,10 @@ const PendingTransactionModalBody = () => {
       }}
     >
       <div style={{ textAlign: 'center', maxWidth: 400 }}>
-        <img
-          src="/assets/quint.gif"
+        <Image
+          src={quint}
           alt={t`Juicebox loading animation`}
-          style={{ maxWidth: 100, marginBottom: '1rem' }}
+          style={{ marginBottom: '1rem' }}
         />
         <h2 style={{ color: colors.text.primary }}>
           <Trans>Transaction pending...</Trans>
@@ -42,6 +52,13 @@ const PendingTransactionModalBody = () => {
             Your transaction has been submitted and is awaiting confirmation.
           </Trans>
         </p>
+        {pendingTxHash ? (
+          <p>
+            <EtherscanLink value={pendingTxHash} type="tx">
+              <Trans>View in Etherscan</Trans>
+            </EtherscanLink>
+          </p>
+        ) : null}
       </div>
     </div>
   )
@@ -53,10 +70,24 @@ const PendingTransactionModalBody = () => {
  * are replaced with a juicy loading state.
  */
 export default function TransactionModal(props: TransactionModalProps) {
-  const { userAddress } = useContext(NetworkContext)
-  const okText = userAddress
-    ? props.okText
-    : props.connectWalletText ?? t`Connect wallet`
+  const { isConnected, chainUnsupported } = useWallet()
+  const okText = useMemo(() => {
+    if (chainUnsupported) {
+      return (
+        props.switchNetworkText ?? t`Switch network to ${readNetwork.label}`
+      )
+    }
+    if (!isConnected) {
+      return props.connectWalletText ?? t`Connect wallet`
+    }
+    return props.okText
+  }, [
+    chainUnsupported,
+    isConnected,
+    props.connectWalletText,
+    props.okText,
+    props.switchNetworkText,
+  ])
   const modalProps = {
     ...props,
     ...{
@@ -64,9 +95,9 @@ export default function TransactionModal(props: TransactionModalProps) {
       cancelText: t`Close`,
       okButtonProps: {
         ...props.okButtonProps,
-        disabled: !userAddress,
       },
       okText: okText,
+      zIndex: 1,
     },
   }
 

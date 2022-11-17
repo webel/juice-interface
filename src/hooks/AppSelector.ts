@@ -1,12 +1,12 @@
+import { useMemo } from 'react'
 import { shallowEqual, TypedUseSelectorHook, useSelector } from 'react-redux'
 import { RootState } from 'redux/store'
 import { deserializeV1FundingCycle } from 'utils/v1/serializers'
-import { useMemo } from 'react'
 import {
   deserializeFundAccessConstraint,
-  deserializeV2FundingCycleData,
-  deserializeV2FundingCycleMetadata,
-} from 'utils/v2/serializers'
+  deserializeV2V3FundingCycleData,
+  deserializeV2V3FundingCycleMetadata,
+} from 'utils/v2v3/serializers'
 
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
@@ -24,14 +24,14 @@ export const useEditingV1FundingCycleSelector = () => {
   return fc
 }
 
-export const useEditingV2FundingCycleMetadataSelector = () => {
+export const useEditingV2V3FundingCycleMetadataSelector = () => {
   const serializedFundingCycleMetadata = useAppSelector(
     state => state.editingV2Project.fundingCycleMetadata,
     shallowEqual,
   )
 
   const fundingCycleMetadata = useMemo(
-    () => deserializeV2FundingCycleMetadata(serializedFundingCycleMetadata),
+    () => deserializeV2V3FundingCycleMetadata(serializedFundingCycleMetadata),
     [serializedFundingCycleMetadata],
   )
 
@@ -42,21 +42,21 @@ export const useEditingV2FundingCycleMetadataSelector = () => {
   return fundingCycleMetadata
 }
 
-export const useEditingV2FundingCycleDataSelector = () => {
+export const useEditingV2V3FundingCycleDataSelector = () => {
   const serializedFundingCycleData = useAppSelector(
     state => state.editingV2Project.fundingCycleData,
     shallowEqual,
   )
 
   const fundingCycleData = useMemo(
-    () => deserializeV2FundingCycleData(serializedFundingCycleData),
+    () => deserializeV2V3FundingCycleData(serializedFundingCycleData),
     [serializedFundingCycleData],
   )
 
   return fundingCycleData
 }
 
-export const useEditingV2FundAccessConstraintsSelector = () => {
+export const useEditingV2V3FundAccessConstraintsSelector = () => {
   const serializedFundAccessConstraints = useAppSelector(
     state => state.editingV2Project.fundAccessConstraints,
     shallowEqual,

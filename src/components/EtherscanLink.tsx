@@ -1,62 +1,45 @@
-import { Tooltip } from 'antd'
-import { t } from '@lingui/macro'
-import { NetworkName } from 'models/network-name'
 import { LinkOutlined } from '@ant-design/icons'
-import { CSSProperties } from 'react'
+import { CSSProperties, MouseEventHandler } from 'react'
+import { truncateEthAddress } from 'utils/format/formatAddress'
 
-import { readNetwork } from 'constants/networks'
+import { etherscanLink } from 'utils/etherscan'
 import ExternalLink from './ExternalLink'
 
-export default function EtherscanLink({
-  value,
-  type,
-  truncated,
-  hideTooltip,
-  style,
-}: {
+const EtherscanLink: React.FC<{
   value: string | undefined
   type: 'tx' | 'address'
   truncated?: boolean
-  hideTooltip?: boolean
+  truncateTo?: number
   style?: CSSProperties
-}) {
+  onClick?: MouseEventHandler
+}> = ({ value, type, truncated, truncateTo, style, children, onClick }) => {
   if (!value) return null
   let truncatedValue: string | undefined
   // Return first and last 4 chars of ETH address only
   if (truncated) {
-    truncatedValue =
-      value.substring(0, 6) + '...' + value.substring(value.length - 4)
+    truncatedValue = truncateEthAddress({ address: value, truncateTo })
   }
 
-  let subdomain = ''
-  if (readNetwork.name !== NetworkName.mainnet) {
-    subdomain = readNetwork.name + '.'
-  }
   const linkProps = {
-    className: 'hover-action',
-    style: { ...style, fontWeight: 400 },
-    href: `https://${subdomain}etherscan.io/${type}/${value}`,
+    className:
+      'hover-text-action-primary hover-text-decoration-underline color-unset',
+    style: { ...style },
+    href: etherscanLink(type, value),
   }
 
   if (type === 'tx') {
     return (
-      <Tooltip
-        title={t`See transaction`}
-        visible={hideTooltip ? !hideTooltip : undefined}
-      >
-        <ExternalLink {...linkProps}>
-          <LinkOutlined />
-        </ExternalLink>
-      </Tooltip>
+      <ExternalLink onClick={onClick} {...linkProps}>
+        {children} <LinkOutlined />
+      </ExternalLink>
     )
   }
 
   return (
-    <Tooltip
-      title={t`Go to Etherscan`}
-      visible={hideTooltip ? !hideTooltip : undefined}
-    >
-      <ExternalLink {...linkProps}>{truncatedValue ?? value}</ExternalLink>
-    </Tooltip>
+    <ExternalLink onClick={onClick} {...linkProps}>
+      {children ?? truncatedValue ?? value}
+    </ExternalLink>
   )
 }
+
+export default EtherscanLink

@@ -2,11 +2,11 @@ import { UploadOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 import TooltipIcon from 'components/TooltipIcon'
 import { ThemeContext } from 'contexts/themeContext'
-import { Split } from 'models/v2/splits'
+import { Split } from 'models/splits'
 import { ChangeEventHandler, useContext } from 'react'
 import { readFile } from 'utils/file'
 import { emitErrorNotification } from 'utils/notifications'
-import { splitPercentFrom } from 'utils/v2/math'
+import { splitPercentFrom } from 'utils/v2v3/math'
 
 /**
  * Parse a CSV file containing JB Splits.

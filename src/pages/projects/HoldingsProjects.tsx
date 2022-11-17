@@ -1,15 +1,15 @@
+import { InfoCircleOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
 import Grid from 'components/Grid'
 import Loading from 'components/Loading'
 import ProjectCard from 'components/ProjectCard'
-import { NetworkContext } from 'contexts/networkContext'
 import { ThemeContext } from 'contexts/themeContext'
 import { useHoldingsProjectsQuery } from 'hooks/Projects'
+import { useWallet } from 'hooks/Wallet'
 import { useContext } from 'react'
-import { InfoCircleOutlined } from '@ant-design/icons'
 
 export default function HoldingsProjects() {
-  const { userAddress } = useContext(NetworkContext)
+  const { userAddress } = useWallet()
 
   const { data: projects, isLoading } = useHoldingsProjectsQuery(userAddress)
 
@@ -36,7 +36,7 @@ export default function HoldingsProjects() {
       {projects && projects.length > 0 && (
         <Grid>
           {projects.map(p => (
-            <ProjectCard key={`${p.id}_${p.cv}`} project={p} />
+            <ProjectCard key={`${p.id}_${p.pv}`} project={p} />
           ))}
         </Grid>
       )}

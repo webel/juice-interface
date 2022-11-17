@@ -2,20 +2,21 @@ import { isAddress } from '@ethersproject/address'
 
 import { Tooltip } from 'antd'
 
-import { useEffect, useState } from 'react'
+import { CSSProperties, MouseEventHandler, useEffect, useState } from 'react'
 
-import EtherscanLink from 'components/EtherscanLink'
 import CopyTextButton from 'components/CopyTextButton'
+import EtherscanLink from 'components/EtherscanLink'
+import { truncateEthAddress } from 'utils/format/formatAddress'
 
-import { readProvider } from 'constants/readProvider'
 import { SECONDS_IN_DAY } from 'constants/numbers'
+import { readProvider } from 'constants/readProvider'
 
 type EnsRecord = {
   name: string | null
   expires: number
 }
 
-const getStorageKey = () => 'jb_ensDict_' + readProvider.network.chainId
+const getStorageKey = () => 'jb_ensDict_' + readProvider?.network?.chainId ?? ''
 
 const getEnsDict = () => {
   if (typeof window !== 'undefined') {
@@ -37,11 +38,15 @@ export default function FormattedAddress({
   label,
   tooltipDisabled,
   truncateTo,
+  style,
+  onClick,
 }: {
   address: string | undefined
   label?: string
   tooltipDisabled?: boolean
   truncateTo?: number
+  style?: CSSProperties
+  onClick?: MouseEventHandler
 }) {
   const [ensName, setEnsName] = useState<string | null>()
 
@@ -96,38 +101,41 @@ export default function FormattedAddress({
 
   if (!address) return null
 
-  const effectiveTruncateTo = truncateTo ?? 6
-  const frontTruncate = effectiveTruncateTo + 2 // account for 0x
-
   const formatted =
-    ensName ??
-    label ??
-    (address
-      ? address.substring(0, frontTruncate) +
-        '...' +
-        address.substr(
-          address.length - effectiveTruncateTo,
-          effectiveTruncateTo,
-        )
-      : '')
+    ensName ?? label ?? truncateEthAddress({ address, truncateTo })
+
+  const mergedStyle: CSSProperties = {
+    userSelect: 'all',
+    lineHeight: '22px',
+    ...style,
+  }
 
   if (tooltipDisabled) {
     return (
-      <span style={{ userSelect: 'all', lineHeight: '22px' }}>{formatted}</span>
+      <span onClick={onClick} style={mergedStyle}>
+        {formatted}
+      </span>
     )
   }
 
   return (
     <Tooltip
-      trigger={['hover', 'click']}
       title={
-        <span>
-          <EtherscanLink value={address} type="address" />{' '}
-          <CopyTextButton value={address} />
+        <span style={{ fontSize: '0.875rem' }}>
+          {address} <CopyTextButton value={address} />
         </span>
       }
     >
-      <span style={{ userSelect: 'all', lineHeight: '22px' }}>{formatted}</span>
+      <span>
+        <EtherscanLink
+          onClick={onClick}
+          type="address"
+          value={address}
+          style={mergedStyle}
+        >
+          {formatted}
+        </EtherscanLink>
+      </span>
     </Tooltip>
   )
 }

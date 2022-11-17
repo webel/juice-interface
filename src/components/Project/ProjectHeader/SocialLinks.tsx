@@ -1,24 +1,9 @@
 import { TwitterOutlined } from '@ant-design/icons'
 import { Space } from 'antd'
+import ExternalLink from 'components/ExternalLink'
 import Discord from 'components/icons/Discord'
 import { CSSProperties } from 'react'
-
-import ExternalLink from '../../ExternalLink'
-
-const prettyUrl = (url: string) => {
-  if (url.startsWith('https://')) {
-    return url.split('https://')[1]
-  } else if (url.startsWith('http://')) {
-    return url.split('http://')[1]
-  } else return url
-}
-
-const linkUrl = (url: string) => {
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url
-  }
-  return 'https://' + url
-}
+import { linkUrl, prettyUrl } from 'utils/url'
 
 const linkStyle: CSSProperties = {
   maxWidth: '20rem',

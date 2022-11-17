@@ -3,33 +3,39 @@ import { Form } from 'antd'
 import { useForm } from 'antd/lib/form/Form'
 import { useContext, useState } from 'react'
 
-import { NetworkContext } from 'contexts/networkContext'
 import { ThemeContext } from 'contexts/themeContext'
-import { V2ProjectContext } from 'contexts/v2/projectContext'
+import { V2V3ProjectContext } from 'contexts/v2v3/V2V3ProjectContext'
 import { useRedeemVeNftTx } from 'hooks/veNft/transactor/VeNftRedeemTx'
 import { VeNftToken } from 'models/subgraph-entities/v2/venft-token'
 
 import { emitSuccessNotification } from 'utils/notifications'
 
-import CustomBeneficiaryInput from 'components/veNft/formControls/CustomBeneficiaryInput'
+import { MemoFormInput } from 'components/Project/PayProjectForm/MemoFormInput'
 import TransactionModal from 'components/TransactionModal'
-import { MemoFormInput } from 'components/inputs/Pay/MemoFormInput'
+import CustomBeneficiaryInput from 'components/veNft/formControls/CustomBeneficiaryInput'
+import { useWallet } from 'hooks/Wallet'
 
 type VeNftRedeemModalProps = {
   token: VeNftToken
-  visible: boolean
+  open: boolean
   onCancel: VoidFunction
   onCompleted: VoidFunction
 }
 
 const VeNftRedeemModal = ({
   token,
-  visible,
+  open,
   onCancel,
   onCompleted,
 }: VeNftRedeemModalProps) => {
-  const { userAddress, onSelectWallet } = useContext(NetworkContext)
-  const { primaryTerminal, tokenAddress } = useContext(V2ProjectContext)
+  const {
+    userAddress,
+    chainUnsupported,
+    isConnected,
+    changeNetworks,
+    connect,
+  } = useWallet()
+  const { primaryETHTerminal, tokenAddress } = useContext(V2V3ProjectContext)
   const { tokenId } = token
   const [form] = useForm<{ beneficiary: string }>()
   const [loading, setLoading] = useState(false)
@@ -45,8 +51,13 @@ const VeNftRedeemModal = ({
     const { beneficiary } = form.getFieldsValue()
     await form.validateFields()
 
-    if (!userAddress && onSelectWallet) {
-      onSelectWallet()
+    if (chainUnsupported) {
+      await changeNetworks()
+      return
+    }
+    if (!isConnected) {
+      await connect()
+      return
     }
 
     const txBeneficiary = beneficiary ? beneficiary : userAddress!
@@ -59,7 +70,7 @@ const VeNftRedeemModal = ({
         token: tokenAddress || '',
         beneficiary: txBeneficiary,
         memo,
-        terminal: primaryTerminal ? primaryTerminal : '',
+        terminal: primaryETHTerminal ?? '',
       },
       {
         onDone: () => {
@@ -83,7 +94,7 @@ const VeNftRedeemModal = ({
 
   return (
     <TransactionModal
-      visible={visible}
+      open={open}
       title={t`Redeem veNFT`}
       onCancel={onCancel}
       onOk={redeem}
@@ -93,12 +104,19 @@ const VeNftRedeemModal = ({
     >
       <div style={{ color: colors.text.secondary }}>
         <p>
-          <Trans>Redeeming this NFT will burn the token and return...</Trans>
+          <Trans>
+            Redeeming this NFT will burn the token, as well as the underlying
+            project token, and you will receive token from the project overflow
+            in return.
+          </Trans>
         </p>
       </div>
       <Form form={form} layout="vertical">
         <MemoFormInput value={memo} onChange={setMemo} />
-        <CustomBeneficiaryInput form={form} />
+        <CustomBeneficiaryInput
+          form={form}
+          labelText={t`Send redeemed token to a custom address`}
+        />
       </Form>
     </TransactionModal>
   )

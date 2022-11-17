@@ -3,7 +3,7 @@ import FormattedAddress from 'components/FormattedAddress'
 import { ThemeContext } from 'contexts/themeContext'
 import { ProjectCreateEvent } from 'models/subgraph-entities/vX/project-create-event'
 import { useContext } from 'react'
-import { formatHistoricalDate } from 'utils/formatDate'
+import { formatHistoricalDate } from 'utils/format/formatDate'
 
 import { Trans } from '@lingui/macro'
 
@@ -34,7 +34,10 @@ export default function ProjectCreateEventElem({
           }}
         >
           <Trans>Project created by</Trans>{' '}
-          <FormattedAddress address={event.caller} />
+          <FormattedAddress
+            address={event.caller}
+            style={{ fontWeight: 400 }}
+          />
         </div>
       </div>
 

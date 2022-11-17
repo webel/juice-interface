@@ -1,15 +1,15 @@
 import ETHAmount from 'components/currency/ETHAmount'
 import FormattedAddress from 'components/FormattedAddress'
 import Loading from 'components/Loading'
-import ProjectVersionBadge from 'components/ProjectVersionBadge'
 import RichNote from 'components/RichNote'
 import V1ProjectHandle from 'components/v1/shared/V1ProjectHandle'
-import V2ProjectHandle from 'components/v2/shared/V2ProjectHandle'
+import V2V3ProjectHandleLink from 'components/v2v3/shared/V2V3ProjectHandleLink'
+import { PV_V1, PV_V1_1 } from 'constants/pv'
 import { ThemeContext } from 'contexts/themeContext'
 import useSubgraphQuery from 'hooks/SubgraphQuery'
 import { Project } from 'models/subgraph-entities/vX/project'
 import { useContext } from 'react'
-import { formatHistoricalDate } from 'utils/formatDate'
+import { formatHistoricalDate } from 'utils/format/formatDate'
 
 export default function Payments() {
   const {
@@ -24,7 +24,7 @@ export default function Payments() {
       'note',
       'timestamp',
       'id',
-      { entity: 'project', keys: ['id', 'projectId', 'cv'] },
+      { entity: 'project', keys: ['id', 'projectId', 'handle', 'pv'] },
     ],
     first: 20,
     orderDirection: 'desc',
@@ -36,13 +36,19 @@ export default function Payments() {
 
     return (
       <div style={{ color: colors.text.action.primary, fontWeight: 500 }}>
-        {project.cv === '2' ? (
-          <div style={{ display: 'flex', alignItems: 'baseline' }}>
-            <V2ProjectHandle projectId={project.projectId} />
-            <ProjectVersionBadge versionText="V2" size="small" />
-          </div>
+        {project.pv === PV_V1 || project.pv === PV_V1_1 ? (
+          <V1ProjectHandle
+            projectId={project.projectId}
+            handle={project.handle}
+          />
         ) : (
-          <V1ProjectHandle projectId={project.projectId} />
+          <div style={{ display: 'flex', alignItems: 'baseline' }}>
+            <V2V3ProjectHandleLink
+              projectId={project.projectId}
+              handle={project.handle}
+              style={{ marginRight: '0.5rem' }}
+            />
+          </div>
         )}
       </div>
     )
@@ -72,7 +78,7 @@ export default function Payments() {
                 <ProjectHandle project={e.project} />
 
                 <div
-                  style={{ fontSize: '.7rem', color: colors.text.secondary }}
+                  style={{ fontSize: '0.75rem', color: colors.text.secondary }}
                 >
                   {e.timestamp && formatHistoricalDate(e.timestamp * 1000)}
                 </div>

@@ -1,21 +1,21 @@
 import { Trans } from '@lingui/macro'
 import { Button, Drawer, DrawerProps } from 'antd'
 
+import ReconfigurationStrategySelector from 'components/ReconfigurationStrategy/ReconfigurationStrategySelector'
 import { ThemeContext } from 'contexts/themeContext'
 import { BallotStrategy } from 'models/ballot'
 import { useContext, useEffect, useState } from 'react'
-import ReconfigurationStrategySelector from 'components/ReconfigurationStrategy/ReconfigurationStrategySelector'
 
 import { ballotStrategies } from 'constants/v1/ballotStrategies'
 
 export default function ReconfigurationStrategyDrawer({
-  visible,
+  open,
   onClose,
   initialSelectedStrategy,
   style = {},
   onSave,
 }: {
-  visible: boolean
+  open: boolean
   onClose: () => void
   initialSelectedStrategy: BallotStrategy
   style?: Partial<DrawerProps>
@@ -34,7 +34,7 @@ export default function ReconfigurationStrategyDrawer({
   }, [initialSelectedStrategy])
 
   return (
-    <Drawer visible={visible} {...style} onClose={onClose}>
+    <Drawer open={open} {...style} onClose={onClose}>
       <h1>
         <Trans>Reconfiguration rules</Trans>
       </h1>

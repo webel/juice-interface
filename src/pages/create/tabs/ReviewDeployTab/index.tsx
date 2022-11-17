@@ -1,18 +1,18 @@
+import { t, Trans } from '@lingui/macro'
 import { Checkbox, Form, Space } from 'antd'
 import { Gutter } from 'antd/lib/grid/row'
-import useMobile from 'hooks/Mobile'
-import { useAppSelector } from 'hooks/AppSelector'
-import { t, Trans } from '@lingui/macro'
 import ExternalLink from 'components/ExternalLink'
-import { useContext } from 'react'
 import { ThemeContext } from 'contexts/themeContext'
+import { useAppSelector } from 'hooks/AppSelector'
+import useMobile from 'hooks/Mobile'
+import { useContext } from 'react'
 
+import { StartOverButton } from '../../StartOverButton'
 import { DeployProjectButton } from './DeployProjectButton'
-import ProjectDetailsSection from './ProjectDetailsSection'
+import { DeployProjectWithNftsButton } from './DeployProjectWithNftsButton'
 import FundingSummarySection from './FundingSummarySection'
 import NftSummarySection from './NftSummarySection'
-import { StartOverButton } from '../../StartOverButton'
-import { DeployProjectWithNftsButton } from './DeployProjectWithNftsButton'
+import ProjectDetailsSection from './ProjectDetailsSection'
 
 import { TERMS_OF_SERVICE_URL } from 'constants/links'
 
@@ -40,7 +40,7 @@ export default function ReviewDeployTab() {
           marginBottom: '2rem',
         }}
       >
-        <Space direction="vertical" style={{ width: '100%', gap: 20 }}>
+        <Space direction="vertical" style={{ width: '100%' }}>
           <ProjectDetailsSection />
           <FundingSummarySection />
           {hasNfts ? <NftSummarySection /> : null}

@@ -1,19 +1,20 @@
 import { CardSection } from 'components/CardSection'
-import { V1ProjectContext } from 'contexts/v1/projectContext'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
 import { ThemeContext } from 'contexts/themeContext'
+import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { useContext } from 'react'
-
-import ReservedTokens from './ReservedTokens'
 import PayoutModsList from '../PayoutModsList'
 import FundingCycleDetails from './FundingCycleDetails'
+import ReservedTokens from './ReservedTokens'
 
 export default function QueuedFundingCycle() {
   const {
     theme: { colors },
   } = useContext(ThemeContext)
 
-  const { projectId, queuedFC, queuedPayoutMods, queuedTicketMods } =
+  const { queuedFC, queuedPayoutMods, queuedTicketMods } =
     useContext(V1ProjectContext)
+  const { projectId } = useContext(ProjectMetadataContext)
 
   if (!projectId) return null
 

@@ -11,37 +11,36 @@ import Callout from 'components/Callout'
 import ETHAmount from 'components/currency/ETHAmount'
 import FormattedAddress from 'components/FormattedAddress'
 import Loading from 'components/Loading'
+import { PV_V1, PV_V1_1 } from 'constants/pv'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
 import { ThemeContext } from 'contexts/themeContext'
-import { CV } from 'models/cv'
 import { Participant } from 'models/subgraph-entities/vX/participant'
 import { useContext, useEffect, useMemo, useState } from 'react'
-import { formatPercent, formatWad } from 'utils/formatNumber'
-import { OrderDirection, querySubgraph } from 'utils/graph'
+import { formatPercent, formatWad } from 'utils/format/formatNumber'
+import { GraphQueryOpts, OrderDirection, querySubgraph } from 'utils/graph'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
-
-import DownloadParticipantsModal from './DownloadParticipantsModal'
+import { DownloadParticipantsModal } from './DownloadParticipantsModal'
 
 const pageSize = 100
 
 export default function ParticipantsModal({
-  projectId,
-  projectName,
   tokenSymbol,
   tokenAddress,
-  cv,
   totalTokenSupply,
-  visible,
+  open,
   onCancel,
 }: {
-  projectId: number | undefined
-  projectName: string | undefined
   tokenSymbol: string | undefined
   tokenAddress: string | undefined
-  cv: CV | undefined
   totalTokenSupply: BigNumber | undefined
-  visible: boolean | undefined
+  open: boolean | undefined
   onCancel: VoidFunction | undefined
 }) {
+  const { projectId, pv } = useContext(ProjectMetadataContext)
+  const {
+    theme: { colors },
+  } = useContext(ThemeContext)
+
   const [loading, setLoading] = useState<boolean>()
   const [participants, setParticipants] = useState<Participant[]>([])
   const [sortPayerReports, setSortPayerReports] =
@@ -50,17 +49,27 @@ export default function ParticipantsModal({
   const [downloadModalVisible, setDownloadModalVisible] = useState<boolean>()
   const [sortPayerReportsDirection, setSortPayerReportsDirection] =
     useState<OrderDirection>('desc')
-  const {
-    theme: { colors },
-  } = useContext(ThemeContext)
 
   useEffect(() => {
     setLoading(true)
 
-    if (!projectId || !visible) {
+    if (!projectId || !open || !pv) {
       setParticipants([])
       return
     }
+
+    // Projects that migrate between 1 & 1.1 may change their PV without the PV of their participants being updated. This should be fixed by better subgraph infrastructure, but this fix will make sure the UI works for now.
+    const pvOpt: GraphQueryOpts<'participant', keyof Participant>['where'] =
+      pv === PV_V1 || pv === PV_V1_1
+        ? {
+            key: 'pv',
+            operator: 'in',
+            value: [PV_V1, PV_V1_1],
+          }
+        : {
+            key: 'pv',
+            value: pv,
+          }
 
     querySubgraph({
       entity: 'participant',
@@ -77,16 +86,13 @@ export default function ParticipantsModal({
       orderBy: sortPayerReports,
       orderDirection: sortPayerReportsDirection,
       where:
-        projectId && cv
+        projectId && pv
           ? [
               {
                 key: 'projectId',
                 value: projectId,
               },
-              {
-                key: 'cv',
-                value: cv,
-              },
+              pvOpt,
               {
                 key: 'balance',
                 value: 0,
@@ -110,17 +116,17 @@ export default function ParticipantsModal({
   }, [
     pageNumber,
     projectId,
-    cv,
+    pv,
     sortPayerReportsDirection,
     sortPayerReports,
-    visible,
+    open,
   ])
 
   const contentLineHeight = '1.4rem'
 
   const list = useMemo(() => {
     const smallHeaderStyle = {
-      fontSize: '.7rem',
+      fontSize: '0.75rem',
       color: colors.text.tertiary,
     }
 
@@ -146,7 +152,7 @@ export default function ParticipantsModal({
             <Select.Option value="balance">
               <Trans>
                 {tokenSymbolText({
-                  tokenSymbol: tokenSymbol,
+                  tokenSymbol,
                   capitalize: true,
                 })}{' '}
                 balance
@@ -222,7 +228,7 @@ export default function ParticipantsModal({
                 >
                   {formatWad(p.balance, { precision: 0 })}{' '}
                   {tokenSymbolText({
-                    tokenSymbol: tokenSymbol,
+                    tokenSymbol,
                     capitalize: false,
                     plural: true,
                   })}{' '}
@@ -232,7 +238,7 @@ export default function ParticipantsModal({
                   {formatWad(p.stakedBalance, { precision: 0 })}{' '}
                   <Trans>
                     {tokenSymbolText({
-                      tokenSymbol: tokenSymbol,
+                      tokenSymbol,
                       capitalize: false,
                       plural: true,
                     })}{' '}
@@ -258,7 +264,7 @@ export default function ParticipantsModal({
 
   return (
     <Modal
-      visible={visible}
+      open={open}
       onCancel={onCancel}
       onOk={onCancel}
       okText={t`Done`}
@@ -267,8 +273,7 @@ export default function ParticipantsModal({
       <div>
         <h4>
           <Trans>
-            {tokenSymbolText({ tokenSymbol: tokenSymbol, capitalize: true })}{' '}
-            holders
+            {tokenSymbolText({ tokenSymbol, capitalize: true })} holders
           </Trans>
         </h4>
         <Space direction="vertical">
@@ -321,10 +326,8 @@ export default function ParticipantsModal({
       </div>
 
       <DownloadParticipantsModal
-        projectId={projectId}
         tokenSymbol={tokenSymbol}
-        projectName={projectName}
-        visible={downloadModalVisible}
+        open={downloadModalVisible}
         onCancel={() => setDownloadModalVisible(false)}
       />
     </Modal>

@@ -1,16 +1,18 @@
-import Navbar from 'components/Navbar'
 import { Layout } from 'antd'
 import { Content } from 'antd/lib/layout/layout'
+import SiteNavigation from 'components/Navbar/SiteNavigation'
+import useMobile from 'hooks/Mobile'
 import { useRouter } from 'next/router'
+import { ArcxProvider } from 'providers/ArcxProvider'
+import { EtherPriceProvider } from 'providers/EtherPriceProvider'
 import LanguageProvider from 'providers/LanguageProvider'
 import ReactQueryProvider from 'providers/ReactQueryProvider'
-import { V1UserProvider } from 'providers/v1/UserProvider'
+import { ThemeProvider } from 'providers/ThemeProvider'
+import TxHistoryProvider from 'providers/TxHistoryProvider'
 import React from 'react'
 import { Provider } from 'react-redux'
-import { ThemeProvider } from 'providers/ThemeProvider'
 import store from 'redux/store'
 import { redirectTo } from 'utils/windowUtils'
-import useMobile from 'hooks/Mobile'
 
 /**
  * Contains all the core app providers used by each page.
@@ -26,12 +28,15 @@ export const AppWrapper: React.FC = ({ children }) => {
       <ReactQueryProvider>
         <Provider store={store}>
           <LanguageProvider>
-            <ThemeProvider>
-              {/* TODO: Remove v1 provider */}
-              <V1UserProvider>
-                <_Wrapper>{children}</_Wrapper>
-              </V1UserProvider>
-            </ThemeProvider>
+            <TxHistoryProvider>
+              <ThemeProvider>
+                <EtherPriceProvider>
+                  <ArcxProvider>
+                    <_Wrapper>{children}</_Wrapper>
+                  </ArcxProvider>
+                </EtherPriceProvider>
+              </ThemeProvider>
+            </TxHistoryProvider>
           </LanguageProvider>
         </Provider>
       </ReactQueryProvider>
@@ -44,7 +49,6 @@ const _Wrapper: React.FC = ({ children }) => {
   if (router.asPath.match(/^\/#\//)) {
     redirectTo(router.asPath.replace('/#/', ''))
   }
-
   const isMobile = useMobile()
 
   return (
@@ -57,8 +61,8 @@ const _Wrapper: React.FC = ({ children }) => {
           background: 'transparent',
         }}
       >
-        <Navbar />
-        <Content style={isMobile ? { paddingTop: 40 } : {}}>{children}</Content>
+        <SiteNavigation />
+        <Content style={isMobile ? { paddingTop: 64 } : {}}>{children}</Content>
       </Layout>
     </>
   )

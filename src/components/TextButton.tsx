@@ -1,17 +1,11 @@
-import { Button, ButtonProps, Space } from 'antd'
 import { RightCircleOutlined } from '@ant-design/icons'
-import { useContext } from 'react'
-import { ThemeContext } from 'contexts/themeContext'
+import { Button, ButtonProps, Space } from 'antd'
 
 export function TextButton({ style, ...props }: ButtonProps) {
-  const {
-    theme: { colors },
-  } = useContext(ThemeContext)
   return (
     <Button
       {...props}
       style={{
-        color: colors.text.tertiary,
         fontSize: '0.8rem',
         textTransform: 'uppercase',
         padding: 0,
@@ -19,6 +13,7 @@ export function TextButton({ style, ...props }: ButtonProps) {
       }}
       type="text"
       size="small"
+      className="text-tertiary! hover-text-action-primary!"
     >
       <Space size="small">
         {props.children}

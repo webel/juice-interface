@@ -1,19 +1,21 @@
 import { t, Trans } from '@lingui/macro'
 
-import { Button, Form, Space, Input } from 'antd'
-import { ThemeContext } from 'contexts/themeContext'
 import { BigNumber } from '@ethersproject/bignumber'
+import { Button, Form, Input, Space } from 'antd'
 import { useForm } from 'antd/lib/form/Form'
-import { V1CurrencyOption } from 'models/v1/currencyOption'
+import { ThemeContext } from 'contexts/themeContext'
 import { PayoutMod } from 'models/mods'
+import { V1CurrencyOption } from 'models/v1/currencyOption'
 import { useContext, useLayoutEffect, useState } from 'react'
-import { fromWad, perbicentToPercent } from 'utils/formatNumber'
+import { fromWad, perbicentToPercent } from 'utils/format/formatNumber'
 
 import { getTotalPercentage } from 'components/formItems/formHelpers'
-import { CurrencyContext } from 'contexts/currencyContext'
 import ProjectPayoutMods from 'components/v1/shared/ProjectPayMods/ProjectPayoutMods'
+import { CurrencyContext } from 'contexts/currencyContext'
 
 import * as constants from '@ethersproject/constants'
+import { CsvUpload } from 'components/CsvUpload/CsvUpload'
+import { parseV1PayoutModsCsv } from 'utils/csv'
 
 export default function PayModsForm({
   initialMods,
@@ -64,6 +66,13 @@ export default function PayModsForm({
     return Promise.resolve()
   }
 
+  const onModsChanged = (newMods: PayoutMod[]) => {
+    setMods(newMods)
+    form.setFieldsValue({
+      totalPercent: calculateTotalPercentage(newMods),
+    })
+  }
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div style={{ color: colors.text.secondary }}>
@@ -85,6 +94,14 @@ export default function PayModsForm({
             owner's wallet.
           </Trans>
         </p>
+      </div>
+
+      <div style={{ textAlign: 'right' }}>
+        <CsvUpload
+          onChange={onModsChanged}
+          templateUrl={'/assets/csv/v1-payouts-template.csv'}
+          parser={parseV1PayoutModsCsv}
+        />
       </div>
 
       <Form form={form} layout="vertical">

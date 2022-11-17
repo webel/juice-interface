@@ -1,28 +1,16 @@
+import { BigNumber } from '@ethersproject/bignumber'
+import * as constants from '@ethersproject/constants'
+
 import { t, Trans } from '@lingui/macro'
 import { Modal, Space, Tooltip } from 'antd'
-import ExternalLink from 'components/ExternalLink'
 import RichButton from 'components/RichButton'
-import { PropsWithChildren, useContext, useState } from 'react'
+import { TransactorInstance } from 'hooks/Transactor'
+import { PropsWithChildren, useState } from 'react'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
-import * as constants from '@ethersproject/constants'
 import { reloadWindow } from 'utils/windowUtils'
-import { V2ProjectContext } from 'contexts/v2/projectContext'
+import { TransferUnclaimedTokensModal } from './modals/TransferUnclaimedTokensModal'
 
-import { VeNftDrawer } from './veNft/VeNftDrawer'
-
-const BURN_DEFINITION_LINK =
-  'https://www.investopedia.com/tech/cryptocurrency-burning-can-it-manage-inflation/'
-
-export type RedeemDisabledReason = 'redemptionRateZero' | 'overflowZero'
-
-const BurnTokensHelp = () => {
-  return (
-    <Trans>
-      <ExternalLink href={BURN_DEFINITION_LINK}>Learn more</ExternalLink> about
-      burning tokens.
-    </Trans>
-  )
-}
+type RedeemDisabledReason = 'redemptionRateZero' | 'overflowZero'
 
 const RedeemButtonTooltip = ({
   buttonDisabled,
@@ -30,27 +18,23 @@ const RedeemButtonTooltip = ({
   children,
 }: PropsWithChildren<{
   redeemDisabledReason?: RedeemDisabledReason
-  buttonDisabled: boolean
+  buttonDisabled?: boolean
 }>) => {
+  if (!buttonDisabled) return <>{children}</>
+
   return (
     <Tooltip
       title={
-        buttonDisabled ? (
-          <>
-            {redeemDisabledReason === 'overflowZero' ? (
-              <Trans>
-                Cannot redeem tokens for ETH because this project has no
-                overflow.
-              </Trans>
-            ) : (
-              <Trans>
-                Cannot redeem tokens for ETH because this project's redemption
-                rate is zero.
-              </Trans>
-            )}
-          </>
+        redeemDisabledReason === 'overflowZero' ? (
+          <Trans>
+            You cannot redeem your tokens for ETH because this project has no
+            overflow.
+          </Trans>
         ) : (
-          <BurnTokensHelp />
+          <Trans>
+            You cannot redeem your tokens for ETH because this project's
+            redemption rate is zero.
+          </Trans>
         )
       }
       placement="right"
@@ -61,53 +45,60 @@ const RedeemButtonTooltip = ({
 }
 
 type ModalProps = {
-  visible?: boolean
-  onCancel?: VoidFunction
-  onConfirmed?: VoidFunction
+  open: boolean
+  onCancel: VoidFunction
+  onConfirmed: VoidFunction
 }
 
 export default function ManageTokensModal({
   onCancel,
-  visible,
+  open,
   projectAllowsMint,
   userHasMintPermission,
-  veNftEnabled,
   hasOverflow,
+  redeemDisabled,
   tokenSymbol,
   tokenAddress,
+  tokenUnclaimedBalance,
+
+  transferUnclaimedTokensTx,
+
+  children,
   RedeemModal,
   ClaimTokensModal,
   MintModal,
-}: {
+}: PropsWithChildren<{
   userHasMintPermission: boolean
   projectAllowsMint: boolean
-  veNftEnabled: boolean
   onCancel?: VoidFunction
-  visible?: boolean
+  open?: boolean
   hasOverflow: boolean | undefined
+  redeemDisabled: boolean | undefined
   tokenSymbol: string | undefined
   tokenAddress: string | undefined
+  tokenUnclaimedBalance: BigNumber | undefined
+
+  transferUnclaimedTokensTx: () => TransactorInstance<{
+    to: string
+    amount: BigNumber
+  }>
 
   RedeemModal: (props: ModalProps) => JSX.Element | null
   ClaimTokensModal: (props: ModalProps) => JSX.Element | null
   MintModal: (props: ModalProps) => JSX.Element | null
-}) {
-  const { fundingCycleMetadata } = useContext(V2ProjectContext)
-
+}>) {
   const [redeemModalVisible, setRedeemModalVisible] = useState<boolean>(false)
-  const [unstakeModalVisible, setUnstakeModalVisible] = useState<boolean>()
-  const [mintModalVisible, setMintModalVisible] = useState<boolean>()
-  const [veNftDrawerVisible, setVeNftDrawerVisible] = useState<boolean>(false)
+  const [unstakeModalVisible, setUnstakeModalVisible] = useState<boolean>(false)
+  const [mintModalVisible, setMintModalVisible] = useState<boolean>(false)
+  const [transferTokensModalVisible, setTransferTokensModalVisible] =
+    useState<boolean>(false)
 
   const tokensLabel = tokenSymbolText({
-    tokenSymbol: tokenSymbol,
+    tokenSymbol,
     capitalize: false,
     plural: true,
   })
 
-  const redeemDisabled = Boolean(
-    !hasOverflow || fundingCycleMetadata?.redemptionRate.eq(0),
-  )
   const redeemDisabledReason = !hasOverflow
     ? 'overflowZero'
     : 'redemptionRateZero'
@@ -117,12 +108,12 @@ export default function ManageTokensModal({
     <>
       <Modal
         title={t`Manage your ${tokenSymbolText({
-          tokenSymbol: tokenSymbol,
+          tokenSymbol,
           capitalize: false,
           plural: true,
           includeTokenWord: true,
         })}`}
-        visible={visible}
+        open={open}
         onCancel={onCancel}
         okButtonProps={{ hidden: true }}
         centered
@@ -132,41 +123,41 @@ export default function ManageTokensModal({
             buttonDisabled={redeemDisabled}
             redeemDisabledReason={redeemDisabledReason}
           >
-            <RichButton
-              heading={<Trans>Redeem {tokensLabel} for ETH</Trans>}
-              description={
-                <Trans>
-                  Redeem your {tokensLabel} for a portion of the project's
-                  overflow. Any {tokensLabel} you redeem will be burned.
-                </Trans>
-              }
-              onClick={() => setRedeemModalVisible(true)}
-              disabled={redeemDisabled}
-            />
+            <div>
+              <RichButton
+                heading={<Trans>Redeem {tokensLabel} for ETH</Trans>}
+                description={
+                  <Trans>
+                    Redeem your {tokensLabel} for a portion of the project's
+                    overflow. Any {tokensLabel} you redeem will be burned.
+                  </Trans>
+                }
+                onClick={() => setRedeemModalVisible(true)}
+                disabled={redeemDisabled}
+              />
+            </div>
           </RedeemButtonTooltip>
 
           {redeemDisabled && (
-            <Tooltip title={<BurnTokensHelp />} placement="right">
-              <RichButton
-                heading={<Trans>Burn {tokensLabel}</Trans>}
-                description={
-                  <>
-                    {redeemDisabledReason === 'overflowZero' ? (
-                      <Trans>
-                        Burn your {tokensLabel}. You won't receive ETH in return
-                        because this project has no overflow.
-                      </Trans>
-                    ) : (
-                      <Trans>
-                        Burn your {tokensLabel}. You won't receive ETH in return
-                        because this project's redemption rate is zero.
-                      </Trans>
-                    )}
-                  </>
-                }
-                onClick={() => setRedeemModalVisible(true)}
-              />
-            </Tooltip>
+            <RichButton
+              heading={<Trans>Burn {tokensLabel}</Trans>}
+              description={
+                <>
+                  {redeemDisabledReason === 'overflowZero' ? (
+                    <Trans>
+                      Burn your {tokensLabel}. You won't receive ETH in return
+                      because this project has no overflow.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Burn your {tokensLabel}. You won't receive ETH in return
+                      because this project's redemption rate is zero.
+                    </Trans>
+                  )}
+                </>
+              }
+              onClick={() => setRedeemModalVisible(true)}
+            />
           )}
 
           {hasIssuedTokens && (
@@ -193,55 +184,62 @@ export default function ManageTokensModal({
               }
               placement="right"
             >
-              <RichButton
-                heading={<Trans>Mint {tokensLabel}</Trans>}
-                description={
-                  <Trans>
-                    Mint new {tokensLabel} into an account. Only a project's
-                    owner, a designated operator, or one of its terminal's
-                    delegates can mint its tokens.
-                  </Trans>
-                }
-                onClick={() => setMintModalVisible(true)}
-                disabled={!projectAllowsMint}
-              />
+              <div>
+                <RichButton
+                  heading={<Trans>Mint {tokensLabel}</Trans>}
+                  description={
+                    <Trans>
+                      Mint new {tokensLabel} into an account. Only a project's
+                      owner, a designated operator, or one of its terminal's
+                      delegates can mint its tokens.
+                    </Trans>
+                  }
+                  onClick={() => setMintModalVisible(true)}
+                  disabled={!projectAllowsMint}
+                />
+              </div>
             </Tooltip>
           )}
-          {veNftEnabled && (
+          {tokenUnclaimedBalance?.gt(0) ? (
             <RichButton
-              heading={<Trans>Stake {tokensLabel} for NFT</Trans>}
+              heading={<Trans>Transfer unclaimed {tokensLabel}</Trans>}
               description={
                 <Trans>
-                  Stake your {tokensLabel} to increase your voting weight and
-                  claim Governance NFTs.
+                  {' '}
+                  Move your unclaimed {tokensLabel} from your wallet to another
+                  wallet.
                 </Trans>
               }
-              onClick={() => setVeNftDrawerVisible(true)}
+              onClick={() => setTransferTokensModalVisible(true)}
             />
-          )}
+          ) : null}
+
+          {children}
         </Space>
       </Modal>
 
       <RedeemModal
-        visible={redeemModalVisible}
+        open={redeemModalVisible}
         onCancel={() => setRedeemModalVisible(false)}
         onConfirmed={reloadWindow}
       />
       <ClaimTokensModal
-        visible={unstakeModalVisible}
+        open={unstakeModalVisible}
         onCancel={() => setUnstakeModalVisible(false)}
         onConfirmed={reloadWindow}
       />
       <MintModal
-        visible={mintModalVisible}
+        open={mintModalVisible}
         onCancel={() => setMintModalVisible(false)}
         onConfirmed={reloadWindow}
       />
-      <VeNftDrawer
-        visible={veNftDrawerVisible}
-        onClose={() => {
-          setVeNftDrawerVisible(false)
-        }}
+      <TransferUnclaimedTokensModal
+        open={transferTokensModalVisible}
+        onCancel={() => setTransferTokensModalVisible(false)}
+        onConfirmed={reloadWindow}
+        tokenSymbol={tokenSymbol}
+        unclaimedBalance={tokenUnclaimedBalance}
+        useTransferUnclaimedTokensTx={transferUnclaimedTokensTx}
       />
     </>
   )

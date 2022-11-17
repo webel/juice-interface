@@ -1,17 +1,18 @@
-import { NextApiRequest, NextApiResponse } from 'next'
 import axios from 'axios'
-import { ProjectMetadataV4 } from 'models/project-metadata'
-import { CV } from 'models/cv'
+import { ProjectMetadataV5 } from 'models/project-metadata'
+import { NextApiRequest, NextApiResponse } from 'next'
 
 import { readNetwork } from 'constants/networks'
+import { PV_V2 } from 'constants/pv'
+import { PV } from 'models/pv'
 
 interface ArchiveProjectNextApiRequest extends NextApiRequest {
   body: {
     archived: boolean
     projectId: number | undefined
-    metadata: ProjectMetadataV4 | undefined
+    metadata: ProjectMetadataV5 | undefined
     handle: string | undefined
-    cv: CV
+    pv: PV
   }
 }
 
@@ -28,7 +29,7 @@ const handler = async (
   }
 
   try {
-    const { archived, projectId, metadata, handle, cv } = req.body
+    const { archived, projectId, metadata, handle, pv } = req.body
 
     if (!projectId || !metadata || !handle) {
       throw new Error()
@@ -50,10 +51,10 @@ const handler = async (
 
     const labels = [
       'archive request',
-      cv === '2' ? 'V2' : 'V1',
+      pv === PV_V2 ? 'V2' : 'V1',
       'bot',
-      readNetwork.name === 'rinkeby' ? 'rinkeby' : undefined,
-      readNetwork.name === 'mainnet' ? 'mainnet' : undefined,
+      readNetwork.name === 'goerli' ? 'site:goerli' : undefined,
+      readNetwork.name === 'mainnet' ? 'site:mainnet' : undefined,
     ].filter(Boolean)
 
     const data = {

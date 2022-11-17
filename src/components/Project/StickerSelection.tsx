@@ -1,8 +1,10 @@
-import { Space } from 'antd'
 import { CloseCircleFilled } from '@ant-design/icons'
-import { useContext } from 'react'
-import { ThemeContext } from 'contexts/themeContext'
+import { Space } from 'antd'
 import { IconedImage } from 'components/IconedImage'
+import { IPFS_LINK_REGEX } from 'constants/ipfs'
+import { ThemeContext } from 'contexts/themeContext'
+import { useContext } from 'react'
+import { ipfsToHttps } from 'utils/ipfs'
 
 export const StickerSelection = ({
   value,
@@ -14,6 +16,7 @@ export const StickerSelection = ({
   const {
     theme: { colors },
   } = useContext(ThemeContext)
+
   const handleImageDeletion = (i: number) => {
     if (!value) {
       onChange?.([])
@@ -22,6 +25,7 @@ export const StickerSelection = ({
     const editedImages = [...value.slice(0, i), ...value.slice(i + 1)]
     onChange?.(editedImages)
   }
+
   return (
     <Space
       style={{ paddingTop: '0.8rem' }}
@@ -31,7 +35,7 @@ export const StickerSelection = ({
       {value?.map((url, i) => (
         <IconedImage
           key={`${i}-${url}`}
-          url={url}
+          url={url.match(IPFS_LINK_REGEX) ? ipfsToHttps(url) : url}
           width={50}
           icon={
             <CloseCircleFilled

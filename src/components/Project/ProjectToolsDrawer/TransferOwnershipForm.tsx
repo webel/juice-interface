@@ -1,5 +1,6 @@
 import { t, Trans } from '@lingui/macro'
-import { Button, Form } from 'antd'
+import { Button, Form, Space, Statistic } from 'antd'
+import FormattedAddress from 'components/FormattedAddress'
 import { EthAddressInput } from 'components/inputs/EthAddressInput'
 import { TransactorInstance } from 'hooks/Transactor'
 import { useState } from 'react'
@@ -30,7 +31,7 @@ export function TransferOwnershipForm({
           setLoadingTransferOwnership(false)
           transferOwnershipForm.resetFields()
         },
-        onError: (error: DOMException) => {
+        onError: (error: Error) => {
           setLoadingTransferOwnership(false)
           emitErrorNotification(error.message)
         },
@@ -43,28 +44,34 @@ export function TransferOwnershipForm({
 
   return (
     <Form form={transferOwnershipForm} layout="vertical">
-      <h3>
-        <Trans>Transfer ownership</Trans>
-      </h3>
-      <p>
-        <Trans>Current owner: {ownerAddress}</Trans>
-      </p>
-      <Form.Item name="to" label={t`Recipient address`}>
-        <EthAddressInput />
-      </Form.Item>
+      <Space direction="vertical" size="large">
+        <Statistic
+          title={<Trans>Current owner</Trans>}
+          valueRender={() => (
+            <span style={{}}>
+              <FormattedAddress address={ownerAddress} />
+            </span>
+          )}
+        />
+        <div>
+          <Form.Item name="to" label={t`Recipient address`}>
+            <EthAddressInput />
+          </Form.Item>
 
-      <Form.Item>
-        <Button
-          onClick={() => transferOwnership()}
-          loading={loadingTransferOwnership}
-          size="small"
-          type="primary"
-        >
-          <span>
-            <Trans>Transfer ownership</Trans>
-          </span>
-        </Button>
-      </Form.Item>
+          <Form.Item>
+            <Button
+              onClick={() => transferOwnership()}
+              loading={loadingTransferOwnership}
+              size="small"
+              type="primary"
+            >
+              <span>
+                <Trans>Transfer ownership</Trans>
+              </span>
+            </Button>
+          </Form.Item>
+        </div>
+      </Space>
     </Form>
   )
 }

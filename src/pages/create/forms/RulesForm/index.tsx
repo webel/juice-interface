@@ -1,11 +1,11 @@
 import { Trans } from '@lingui/macro'
 import { Button, Form, Space, Switch } from 'antd'
 
+import { ThemeContext } from 'contexts/themeContext'
 import { useAppDispatch } from 'hooks/AppDispatch'
 import { useAppSelector } from 'hooks/AppSelector'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { editingV2ProjectActions } from 'redux/slices/editingV2Project'
-import { ThemeContext } from 'contexts/themeContext'
 
 import { isAddress } from '@ethersproject/address'
 
@@ -19,9 +19,9 @@ import { shadowCard } from 'constants/styles/shadowCard'
 import {
   ballotStrategies,
   DEFAULT_BALLOT_STRATEGY,
-} from 'constants/v2/ballotStrategies'
+} from 'constants/v2v3/ballotStrategies'
+import { getBallotStrategyByAddress } from 'utils/v2v3/ballotStrategies'
 import FormItemLabel from '../../FormItemLabel'
-import { getBallotStrategyByAddress } from 'constants/v2/ballotStrategies/getBallotStrategiesByAddress'
 import TokenMintingExtra from './TokenMintingExtra'
 
 export default function RulesForm({

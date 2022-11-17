@@ -1,43 +1,37 @@
-import {
-  V2ProjectContext,
-  V2ProjectContextType,
-} from 'contexts/v2/projectContext'
 import { BigNumber } from '@ethersproject/bignumber'
-import { useContext } from 'react'
-
+import { V2V3Project } from 'components/v2v3/V2V3Project/V2V3Project'
+import { PV_V2 } from 'constants/pv'
+import { NftRewardsContext } from 'contexts/nftRewardsContext'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
+import {
+  V2V3ProjectContext,
+  V2V3ProjectContextType,
+} from 'contexts/v2v3/V2V3ProjectContext'
 import {
   useAppSelector,
-  useEditingV2FundAccessConstraintsSelector,
-  useEditingV2FundingCycleDataSelector,
-  useEditingV2FundingCycleMetadataSelector,
+  useEditingV2V3FundAccessConstraintsSelector,
+  useEditingV2V3FundingCycleDataSelector,
+  useEditingV2V3FundingCycleMetadataSelector,
 } from 'hooks/AppSelector'
+import { useWallet } from 'hooks/Wallet'
+import { V2V3FundingCycle } from 'models/v2v3/fundingCycle'
+import { EMPTY_NFT_COLLECTION_METADATA } from 'redux/slices/editingV2Project'
+import { V2V3_CURRENCY_ETH } from 'utils/v2v3/currency'
+import { getDefaultFundAccessConstraint } from 'utils/v2v3/fundingCycle'
 
-import { NetworkContext } from 'contexts/networkContext'
-
-import { V2FundingCycle } from 'models/v2/fundingCycle'
-
-import { getDefaultFundAccessConstraint } from 'utils/v2/fundingCycle'
-import { V2_CURRENCY_ETH } from 'utils/v2/currency'
-
-import V2Project from '../../components/v2/V2Project'
-
-export default function ProjectPreview({
-  singleColumnLayout,
-}: {
-  singleColumnLayout?: boolean
-}) {
+export function ProjectPreview() {
   const {
     projectMetadata,
     payoutGroupedSplits,
     reservedTokensGroupedSplits,
     nftRewards: { CIDs: nftRewardsCIDs, rewardTiers: nftRewardTiers },
   } = useAppSelector(state => state.editingV2Project)
-  const fundingCycleMetadata = useEditingV2FundingCycleMetadataSelector()
-  const fundingCycleData = useEditingV2FundingCycleDataSelector()
-  const fundAccessConstraints = useEditingV2FundAccessConstraintsSelector()
-  const { userAddress } = useContext(NetworkContext)
+  const fundingCycleMetadata = useEditingV2V3FundingCycleMetadataSelector()
+  const fundingCycleData = useEditingV2V3FundingCycleDataSelector()
+  const fundAccessConstraints = useEditingV2V3FundAccessConstraintsSelector()
+  const { userAddress } = useWallet()
 
-  const fundingCycle: V2FundingCycle = {
+  const fundingCycle: V2V3FundingCycle = {
     ...fundingCycleData,
     number: BigNumber.from(1),
     configuration: BigNumber.from(0),
@@ -50,14 +44,10 @@ export default function ProjectPreview({
     fundAccessConstraints,
   )
 
-  const project: V2ProjectContextType = {
+  const project: V2V3ProjectContextType = {
     isPreviewMode: true,
-    cv: '2',
-    isArchived: false,
 
-    projectId: 0,
     handle: undefined,
-    projectMetadata,
 
     createdAt: undefined,
 
@@ -68,7 +58,7 @@ export default function ProjectPreview({
     distributionLimitCurrency:
       !fundAccessConstraint?.distributionLimitCurrency.eq(0)
         ? fundAccessConstraint?.distributionLimitCurrency
-        : BigNumber.from(V2_CURRENCY_ETH),
+        : BigNumber.from(V2V3_CURRENCY_ETH),
 
     payoutSplits: payoutGroupedSplits?.splits,
     reservedTokensSplits: reservedTokensGroupedSplits?.splits,
@@ -80,24 +70,13 @@ export default function ProjectPreview({
 
     tokenAddress: undefined,
     terminals: [],
-    primaryTerminal: undefined,
+    primaryETHTerminal: undefined,
     tokenSymbol: undefined,
     tokenName: undefined,
     projectOwnerAddress: userAddress,
     ballotState: undefined,
     primaryTerminalCurrentOverflow: undefined,
     totalTokenSupply: undefined,
-
-    nftRewards: {
-      CIDs: nftRewardsCIDs,
-      rewardTiers: nftRewardTiers,
-      loading: undefined,
-    },
-
-    veNft: {
-      contractAddress: undefined,
-      uriResolver: undefined,
-    },
 
     loading: {
       ETHBalanceLoading: false,
@@ -109,13 +88,31 @@ export default function ProjectPreview({
   }
 
   return (
-    <V2ProjectContext.Provider value={project}>
-      <div>
-        <V2Project
-          singleColumnLayout={singleColumnLayout}
-          expandFundingCycleCard
-        />
-      </div>
-    </V2ProjectContext.Provider>
+    <ProjectMetadataContext.Provider
+      value={{
+        projectMetadata,
+        isArchived: false,
+        projectId: 0,
+        pv: PV_V2,
+      }}
+    >
+      <V2V3ProjectContext.Provider value={project}>
+        <div>
+          <NftRewardsContext.Provider
+            value={{
+              nftRewards: {
+                rewardTiers: nftRewardTiers,
+                CIDs: nftRewardsCIDs,
+                collectionMetadata: EMPTY_NFT_COLLECTION_METADATA,
+                postPayModal: projectMetadata?.nftPaymentSuccessModal,
+              },
+              loading: false,
+            }}
+          >
+            <V2V3Project />
+          </NftRewardsContext.Provider>
+        </div>
+      </V2V3ProjectContext.Provider>
+    </ProjectMetadataContext.Provider>
   )
 }

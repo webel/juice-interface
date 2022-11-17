@@ -2,28 +2,32 @@ import { Trans } from '@lingui/macro'
 import { Modal, Space } from 'antd'
 import FormattedAddress from 'components/FormattedAddress'
 import TicketModsList from 'components/v1/shared/TicketModsList'
+import { ProjectMetadataContext } from 'contexts/projectMetadataContext'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import useReservedTokensOfProject from 'hooks/v1/contractReader/ReservedTokensOfProject'
 import { useDistributeTokensTx } from 'hooks/v1/transactor/DistributeTokensTx'
 import { useContext, useState } from 'react'
-import { formatWad } from 'utils/formatNumber'
-import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
+import { formatWad } from 'utils/format/formatNumber'
 import { tokenSymbolText } from 'utils/tokenSymbolText'
+import { decodeFundingCycleMetadata } from 'utils/v1/fundingCycle'
 
 export default function DistributeTokensModal({
-  visible,
+  open,
   onCancel,
   onConfirmed,
   reservedRate,
 }: {
-  visible?: boolean
+  open?: boolean
   onCancel?: VoidFunction
   onConfirmed?: VoidFunction
   reservedRate: number
 }) {
-  const [loading, setLoading] = useState<boolean>()
-  const { tokenSymbol, currentFC, projectId, currentTicketMods, owner } =
+  const { tokenSymbol, currentFC, currentTicketMods, owner } =
     useContext(V1ProjectContext)
+  const { projectId } = useContext(ProjectMetadataContext)
+
+  const [loading, setLoading] = useState<boolean>()
+
   const distributeTokensTx = useDistributeTokensTx()
 
   const metadata = decodeFundingCycleMetadata(currentFC?.metadata)
@@ -44,14 +48,14 @@ export default function DistributeTokensModal({
   return (
     <Modal
       title={`Distribute reserved ${tokenSymbolText({
-        tokenSymbol: tokenSymbol,
+        tokenSymbol,
         capitalize: false,
         plural: true,
       })}`}
-      visible={visible}
+      open={open}
       onOk={distribute}
       okText={`Distribute ${tokenSymbolText({
-        tokenSymbol: tokenSymbol,
+        tokenSymbol,
         capitalize: false,
         plural: true,
       })}`}
@@ -88,7 +92,7 @@ export default function DistributeTokensModal({
             <Trans>
               All{' '}
               {tokenSymbolText({
-                tokenSymbol: tokenSymbol,
+                tokenSymbol,
                 capitalize: false,
                 plural: true,
               })}{' '}

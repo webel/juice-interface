@@ -1,10 +1,11 @@
-import { CloseCircleFilled } from '@ant-design/icons'
-import { FileImageOutlined } from '@ant-design/icons'
+import { CloseCircleFilled, FileImageOutlined } from '@ant-design/icons'
 import { t, Trans } from '@lingui/macro'
+import { PinataMetadata } from '@pinata/sdk'
 import { Button, Col, message, Row, Space, Upload } from 'antd'
 import { ThemeContext } from 'contexts/themeContext'
+import { pinFileToIpfs } from 'lib/api/ipfs'
 import { useContext, useState } from 'react'
-import { ipfsCidUrl, pinFileToIpfs } from 'utils/ipfs'
+import { cidFromIpfsUri, ipfsUrl, restrictedIpfsUrl } from 'utils/ipfs'
 
 import ExternalLink from '../ExternalLink'
 
@@ -22,20 +23,27 @@ export const FormImageUploader = ({
   metadata,
   text,
 }: {
-  value?: string
+  value?: string // IPFS link: `ipfs://${cid}`
   onChange?: (value?: string) => void
-  metadata?: Record<string | number, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+  metadata?: PinataMetadata
   maxSizeKBs?: number
   text?: string
 }) => {
-  const [loadingUpload, setLoadingUpload] = useState<boolean>(false)
-
   const { theme } = useContext(ThemeContext)
 
+  const [loadingUpload, setLoadingUpload] = useState<boolean>(false)
+  const [imageCid, setImageCid] = useState<string | undefined>(
+    value ? cidFromIpfsUri(value) : undefined,
+  )
+
   const setValue = (cid?: string) => {
-    const newUrl = cid ? ipfsCidUrl(cid) : undefined
-    onChange?.(newUrl)
+    setImageCid(cid)
+    // storing images in `ipfs://` format where possible (see issue #1726)
+    const url = cid ? ipfsUrl(cid) : undefined
+    onChange?.(url)
   }
+
+  const imageUrl = imageCid ? restrictedIpfsUrl(imageCid) : undefined
 
   return (
     <Row
@@ -46,7 +54,7 @@ export const FormImageUploader = ({
     >
       <Col xs={24} md={7}>
         <Space align="start">
-          {value && (
+          {imageUrl ? (
             <img
               style={{
                 maxHeight: 80,
@@ -55,12 +63,13 @@ export const FormImageUploader = ({
                 objectPosition: 'center',
                 borderRadius: theme.radii.md,
               }}
-              src={value}
+              src={imageUrl}
               alt="Uploaded user content"
+              crossOrigin="anonymous"
             />
-          )}
+          ) : null}
 
-          {value ? (
+          {imageUrl ? (
             <Button
               icon={<CloseCircleFilled />}
               type="text"
@@ -98,16 +107,17 @@ export const FormImageUploader = ({
       </Col>
 
       <Col xs={24} md={17}>
-        {value?.length ? (
+        {imageUrl ? (
           <span
             style={{
-              fontSize: '.7rem',
+              fontSize: '0.75rem',
               wordBreak: 'break-all',
               textOverflow: 'ellipsis',
             }}
           >
             <Trans>
-              Uploaded to: <ExternalLink href={value}>{value}</ExternalLink>
+              Uploaded to:{' '}
+              <ExternalLink href={imageUrl}>{imageUrl}</ExternalLink>
             </Trans>
           </span>
         ) : null}

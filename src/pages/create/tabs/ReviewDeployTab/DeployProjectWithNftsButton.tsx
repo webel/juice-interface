@@ -1,33 +1,28 @@
+import { BigNumber } from '@ethersproject/bignumber'
+import { TransactionReceipt } from '@ethersproject/providers'
 import { Trans } from '@lingui/macro'
 import { Button, FormInstance } from 'antd'
+import TransactionModal from 'components/TransactionModal'
+import { NEW_DEPLOY_QUERY_PARAM } from 'components/v2v3/V2V3Project/modals/NewDeployModal'
+import { readNetwork } from 'constants/networks'
+import { useAppDispatch } from 'hooks/AppDispatch'
 import {
   useAppSelector,
-  useEditingV2FundAccessConstraintsSelector,
-  useEditingV2FundingCycleDataSelector,
-  useEditingV2FundingCycleMetadataSelector,
+  useEditingV2V3FundAccessConstraintsSelector,
+  useEditingV2V3FundingCycleDataSelector,
+  useEditingV2V3FundingCycleMetadataSelector,
 } from 'hooks/AppSelector'
-import {
-  TxNftArg,
-  useLaunchProjectWithNftsTx,
-} from 'hooks/v2/transactor/LaunchProjectWithNftsTx'
-import { useCallback, useContext, useState } from 'react'
-import { uploadProjectMetadata } from 'utils/ipfs'
-import { TransactionReceipt } from '@ethersproject/providers'
-import { BigNumber } from '@ethersproject/bignumber'
-import { NetworkContext } from 'contexts/networkContext'
-import { emitErrorNotification } from 'utils/notifications'
-
-import TransactionModal from 'components/TransactionModal'
-
-import { useAppDispatch } from 'hooks/AppDispatch'
-
-import { editingV2ProjectActions } from 'redux/slices/editingV2Project'
-
-import { v2ProjectRoute } from 'utils/routes'
-import { TransactionEvent } from 'bnc-notify'
+import { useLaunchProjectWithNftsTx } from 'hooks/v2v3/transactor/LaunchProjectWithNftsTx'
+import { useWallet } from 'hooks/Wallet'
+import { uploadProjectMetadata } from 'lib/api/ipfs'
+import { TransactionOptions } from 'models/transaction'
 import { useRouter } from 'next/router'
+import { useCallback, useState } from 'react'
+import { editingV2ProjectActions } from 'redux/slices/editingV2Project'
+import { buildJB721TierParams } from 'utils/nftRewards'
 
-import { readNetwork } from 'constants/networks'
+import { emitErrorNotification } from 'utils/notifications'
+import { v2v3ProjectRoute } from 'utils/routes'
 import { findTransactionReceipt } from './utils'
 
 const NFT_CREATE_EVENT_IDX = 2
@@ -53,31 +48,38 @@ const getProjectIdFromNftLaunchReceipt = (
 }
 
 export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
-  const launchProjectWithNftsTx = useLaunchProjectWithNftsTx()
-  const router = useRouter()
+  const [deployLoading, setDeployLoading] = useState<boolean>()
+  const [transactionPending, setTransactionPending] = useState<boolean>()
 
-  const { userAddress, onSelectWallet } = useContext(NetworkContext)
+  const router = useRouter()
+  const { chainUnsupported, isConnected, changeNetworks, connect } = useWallet()
 
   const {
     projectMetadata: { name: projectName },
   } = useAppSelector(state => state.editingV2Project)
-
-  const [deployLoading, setDeployLoading] = useState<boolean>()
-  const [transactionPending, setTransactionPending] = useState<boolean>()
-
   const {
     projectMetadata,
     reservedTokensGroupedSplits,
     payoutGroupedSplits,
-    nftRewards: { CIDs, rewardTiers, collectionName, collectionSymbol },
+    nftRewards: {
+      CIDs,
+      rewardTiers,
+      collectionMetadata: {
+        name: collectionName,
+        symbol: collectionSymbol,
+        uri: collectionUri,
+      },
+      postPayModal,
+    },
   } = useAppSelector(state => state.editingV2Project)
-  const fundingCycleMetadata = useEditingV2FundingCycleMetadataSelector()
-  const fundingCycleData = useEditingV2FundingCycleDataSelector()
-  const fundAccessConstraints = useEditingV2FundAccessConstraintsSelector()
+  const fundingCycleMetadata = useEditingV2V3FundingCycleMetadataSelector()
+  const fundingCycleData = useEditingV2V3FundingCycleDataSelector()
+  const fundAccessConstraints = useEditingV2V3FundAccessConstraintsSelector()
   const dispatch = useAppDispatch()
 
+  const launchProjectWithNftsTx = useLaunchProjectWithNftsTx()
+
   const deployProject = useCallback(async () => {
-    setDeployLoading(true)
     if (
       !(
         projectMetadata?.name &&
@@ -86,12 +88,16 @@ export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
         fundAccessConstraints
       )
     ) {
-      setDeployLoading(false)
       throw new Error('Error deploying project.')
     }
 
+    setDeployLoading(true)
+
     // Upload project metadata
-    const uploadedMetadata = await uploadProjectMetadata(projectMetadata)
+    const uploadedMetadata = await uploadProjectMetadata({
+      nftPaymentSuccessModal: postPayModal,
+      ...projectMetadata,
+    })
 
     if (!uploadedMetadata.IpfsHash) {
       console.error('Failed to upload project metadata.')
@@ -99,13 +105,13 @@ export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
       return
     }
 
-    const txOpts = {
+    const txOpts: TransactionOptions = {
       onDone() {
         console.info('Transaction executed. Awaiting confirmation...')
         setTransactionPending(true)
       },
-      async onConfirmed(result: TransactionEvent | undefined) {
-        const txHash = result?.transaction?.hash
+      async onConfirmed(result) {
+        const txHash = result?.hash
         if (!txHash) {
           return // TODO error notififcation
         }
@@ -125,7 +131,9 @@ export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
         // Reset Redux state/localstorage after deploying
         dispatch(editingV2ProjectActions.resetState())
 
-        router.push(`${v2ProjectRoute({ projectId })}?newDeploy=true`)
+        router.push(
+          `${v2v3ProjectRoute({ projectId })}?${NEW_DEPLOY_QUERY_PARAM}=1`,
+        )
       },
       onCancelled() {
         setDeployLoading(false)
@@ -133,50 +141,40 @@ export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
       },
     }
 
-    const handleProjectLaunchFailed = (error: Error) => {
-      emitErrorNotification(`Failure: ${error}`)
+    try {
+      if (!(projectName && CIDs && rewardTiers)) {
+        throw new Error('Data missing.')
+      }
+
+      const tiers = buildJB721TierParams({ cids: CIDs, rewardTiers })
+      const txSuccessful = await launchProjectWithNftsTx(
+        {
+          collectionUri: collectionUri ?? '',
+          collectionName: collectionName ?? projectName,
+          collectionSymbol: collectionSymbol ?? '',
+          projectMetadataCID: uploadedMetadata.IpfsHash,
+          fundingCycleData,
+          fundingCycleMetadata: {
+            ...fundingCycleMetadata,
+            ...NFT_FUNDING_CYCLE_METADATA_OVERRIDES,
+          },
+          fundAccessConstraints,
+          groupedSplits: [payoutGroupedSplits, reservedTokensGroupedSplits],
+          tiers,
+        },
+        txOpts,
+      )
+
+      if (!txSuccessful) {
+        throw new Error('Transaction failed.')
+      }
+    } catch (error) {
+      emitErrorNotification(`Failed to launch project: ${error}`)
       setDeployLoading(false)
       setTransactionPending(false)
     }
-
-    const groupedSplits = [payoutGroupedSplits, reservedTokensGroupedSplits]
-
-    let txSuccessful: boolean
-
-    try {
-      if (projectName && CIDs) {
-        // create mapping from cids -> contributionFloor
-        const nftRewardsArg: TxNftArg = {}
-
-        CIDs.map((cid, index) => {
-          nftRewardsArg[cid] = rewardTiers[index]
-        })
-
-        txSuccessful = await launchProjectWithNftsTx(
-          {
-            collectionName: collectionName ?? projectName,
-            collectionSymbol: collectionSymbol ?? '',
-            projectMetadataCID: uploadedMetadata.IpfsHash,
-            fundingCycleData,
-            fundingCycleMetadata: {
-              ...fundingCycleMetadata,
-              ...NFT_FUNDING_CYCLE_METADATA_OVERRIDES,
-            },
-            fundAccessConstraints,
-            groupedSplits,
-            nftRewards: nftRewardsArg,
-          },
-          txOpts,
-        )
-        if (!txSuccessful) {
-          setDeployLoading(false)
-          setTransactionPending(false)
-        }
-      }
-    } catch (error) {
-      handleProjectLaunchFailed(error as Error)
-    }
   }, [
+    postPayModal,
     projectName,
     launchProjectWithNftsTx,
     projectMetadata,
@@ -189,6 +187,7 @@ export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
     rewardTiers,
     collectionName,
     collectionSymbol,
+    collectionUri,
     dispatch,
     router,
   ])
@@ -200,8 +199,13 @@ export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
       return
     }
 
-    if (!userAddress) {
-      return onSelectWallet?.()
+    if (chainUnsupported) {
+      await changeNetworks()
+      return
+    }
+    if (!isConnected) {
+      await connect()
+      return
     }
 
     return deployProject()
@@ -218,7 +222,7 @@ export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
         loading={deployLoading}
       >
         <span>
-          {userAddress ? (
+          {isConnected ? (
             <Trans>Deploy project to {readNetwork.name}</Trans>
           ) : (
             <Trans>Connect wallet to deploy</Trans>
@@ -227,7 +231,7 @@ export function DeployProjectWithNftsButton({ form }: { form: FormInstance }) {
       </Button>
       <TransactionModal
         transactionPending={transactionPending}
-        visible={transactionPending}
+        open={transactionPending}
       />
     </>
   )

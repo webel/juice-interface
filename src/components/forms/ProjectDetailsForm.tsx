@@ -1,11 +1,11 @@
-import { Button, Form, FormInstance, Space } from 'antd'
 import { t, Trans } from '@lingui/macro'
+import { Button, Form, FormInstance, Space } from 'antd'
 
-import { FormItems } from 'components/formItems'
-import { normalizeHandle } from 'utils/formatHandle'
-import { CSSProperties } from 'react'
 import Callout from 'components/Callout'
+import { FormItems } from 'components/formItems'
 import { MinimalCollapse } from 'components/MinimalCollapse'
+import { CSSProperties } from 'react'
+import { normalizeHandle } from 'utils/format/formatHandle'
 
 export type ProjectDetailsFormFields = {
   name: string
@@ -82,6 +82,7 @@ export default function ProjectDetailsForm({
             initialUrl={form.getFieldValue('logoUri')}
             onSuccess={logoUri => {
               form.setFieldsValue({ logoUri })
+              onValuesChange?.()
             }}
             formItemProps={{ style: { marginBottom: 0 } }}
           />

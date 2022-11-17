@@ -1,23 +1,23 @@
-import { Form } from 'antd'
 import { t, Trans } from '@lingui/macro'
-import { CSSProperties, useContext, useState } from 'react'
-import FormItemLabel from 'pages/create/FormItemLabel'
-import { formattedNum } from 'utils/formatNumber'
+import { Form } from 'antd'
 import { ThemeContext } from 'contexts/themeContext'
+import round from 'lodash/round'
+import FormItemLabel from 'pages/create/FormItemLabel'
+import { CSSProperties, useContext, useState } from 'react'
 import { defaultFundingCycleMetadata } from 'redux/slices/editingV2Project'
-import { DEFAULT_MINT_RATE } from 'utils/v2/math'
-import { round } from 'lodash'
+import { formattedNum } from 'utils/format/formatNumber'
+import { DEFAULT_MINT_RATE } from 'utils/v2v3/math'
 
-import NumberSlider from '../inputs/NumberSlider'
-import { FormItemExt } from './formItemExt'
 import {
   FUNDING_CYCLE_WARNING_TEXT,
   RESERVED_RATE_WARNING_THRESHOLD_PERCENT,
 } from 'constants/fundingWarningText'
-import FundingCycleDetailWarning from '../Project/FundingCycleDetailWarning'
 import FormItemWarningText from '../FormItemWarningText'
+import NumberSlider from '../inputs/NumberSlider'
+import FundingCycleDetailWarning from '../Project/FundingCycleDetailWarning'
 import SwitchHeading from '../SwitchHeading'
 import TooltipLabel from '../TooltipLabel'
+import { FormItemExt } from './formItemExt'
 
 export default function ProjectReserved({
   name,
@@ -68,7 +68,7 @@ export default function ProjectReserved({
   return (
     <Form.Item
       extra={
-        <div style={{ fontSize: '0.9rem' }}>
+        <div style={{ fontSize: '0.875rem' }}>
           <p>
             <Trans>
               Reserve a percentage of freshly minted tokens for your project to

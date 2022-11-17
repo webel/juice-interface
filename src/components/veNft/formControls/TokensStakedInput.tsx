@@ -1,9 +1,9 @@
+import { BigNumber } from '@ethersproject/bignumber'
 import { plural, t, Trans } from '@lingui/macro'
 import { Form, InputNumber } from 'antd'
-import { BigNumber } from '@ethersproject/bignumber'
 import { FormInstance } from 'rc-field-form'
 import { useEffect } from 'react'
-import { fromWad } from 'utils/formatNumber'
+import { fromWad } from 'utils/format/formatNumber'
 
 interface TokensStakedInputProps {
   form: FormInstance

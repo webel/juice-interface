@@ -1,24 +1,25 @@
 import { t, Trans } from '@lingui/macro'
-import { Col, Row, Image, Descriptions } from 'antd'
+import { Col, Descriptions, Image, Row } from 'antd'
 import Callout from 'components/Callout'
 import FormattedAddress from 'components/FormattedAddress'
 import TransactionModal from 'components/TransactionModal'
 
-import { NetworkContext } from 'contexts/networkContext'
 import { useLockTx } from 'hooks/veNft/transactor/VeNftLockTx'
-import { VeNftTokenMetadata } from 'models/v2/veNft'
+import { useWallet } from 'hooks/Wallet'
+import { VeNftTokenMetadata } from 'models/veNft'
 
-import { useContext, useState } from 'react'
-import { formattedNum, parseWad } from 'utils/formatNumber'
+import { useState } from 'react'
+import { formattedNum, parseWad } from 'utils/format/formatNumber'
 
-import { detailedTimeString } from 'utils/formatTime'
+import { detailedTimeString } from 'utils/format/formatTime'
 import {
   emitErrorNotification,
   emitSuccessNotification,
 } from 'utils/notifications'
+import { reloadWindow } from 'utils/windowUtils'
 
 type ConfirmStakeModalProps = {
-  visible: boolean
+  open: boolean
   tokenSymbolDisplayText: string
   tokensStaked: number
   lockDuration: number
@@ -32,7 +33,7 @@ type ConfirmStakeModalProps = {
 }
 
 export default function ConfirmStakeModal({
-  visible,
+  open,
   tokenSymbolDisplayText,
   tokensStaked,
   lockDuration,
@@ -44,9 +45,16 @@ export default function ConfirmStakeModal({
   onCancel,
   onCompleted,
 }: ConfirmStakeModalProps) {
-  const { userAddress, onSelectWallet } = useContext(NetworkContext)
+  const {
+    userAddress,
+    chainUnsupported,
+    isConnected,
+    changeNetworks,
+    connect,
+  } = useWallet()
   const [loading, setLoading] = useState(false)
   const [transactionPending, setTransactionPending] = useState(false)
+
   const recipient = beneficiary !== '' ? beneficiary : userAddress
 
   const tokensStakedInWad = parseWad(tokensStaked)
@@ -66,8 +74,13 @@ export default function ConfirmStakeModal({
       return
     }
 
-    if (!userAddress && onSelectWallet) {
-      onSelectWallet()
+    if (chainUnsupported) {
+      await changeNetworks()
+      return
+    }
+    if (!isConnected) {
+      await connect()
+      return
     }
 
     setLoading(true)
@@ -92,18 +105,20 @@ export default function ConfirmStakeModal({
             t`Lock successful. Results will be indexed in a few moments.`,
           )
           onCompleted()
+          reloadWindow()
         },
       },
     )
 
     if (!txSuccess) {
       setLoading(false)
+      setTransactionPending(false)
     }
   }
 
   return (
     <TransactionModal
-      visible={visible}
+      open={open}
       title={t`Confirm Stake`}
       onCancel={onCancel}
       onOk={lock}

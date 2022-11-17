@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import { FC, ReactNode } from 'react'
 
-import config from '../../../config/seo_meta.json'
+import config from 'config/seo_meta.json'
 import { OpenGraphMetaTags } from './OpenGraphMetaTags'
 import {
   TwitterCardType,
@@ -9,7 +9,7 @@ import {
   TwitterMetaTagsProps,
 } from './TwitterMetaTags'
 
-interface Props {
+export interface SEOProps {
   url?: string
   title?: string
   description?: string
@@ -18,7 +18,7 @@ interface Props {
   children?: ReactNode
 }
 
-export const SEO: FC<Props> = ({
+export const SEO: FC<SEOProps> = ({
   url,
   title,
   description,
@@ -46,10 +46,6 @@ export const SEO: FC<Props> = ({
           name="googlebot"
           content={robots ?? 'index,follow'}
         ></meta>
-        <meta
-          name="google-site-verification"
-          content="0Jp7zERBL5i76DiM-bODvBGgbjuVMEQGSuwOchP_ZnE"
-        />
       </Head>
 
       <TwitterMetaTags

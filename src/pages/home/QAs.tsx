@@ -1,8 +1,8 @@
 import { t, Trans } from '@lingui/macro'
 import ExternalLink from 'components/ExternalLink'
-import { ReactNode, FC } from 'react'
 import Link from 'next/link'
-import { helpPagePath } from 'utils/helpPageHelper'
+import { FC, ReactNode } from 'react'
+import { helpPagePath } from 'utils/routes'
 
 export const OverflowVideoLink: FC = ({ children }) => (
   <ExternalLink href="https://youtu.be/9Mq5oDh0aBY">{children}</ExternalLink>
@@ -10,7 +10,7 @@ export const OverflowVideoLink: FC = ({ children }) => (
 
 const JB_FEE = 2.5
 
-export const JBDiscordLink = ({ children }: { children: ReactNode }) => (
+const JBDiscordLink = ({ children }: { children: ReactNode }) => (
   <ExternalLink href="https://discord.gg/6jXrJSyDFf">{children}</ExternalLink>
 )
 
@@ -27,6 +27,8 @@ export default function QAs(): {
   img?: {
     src: string
     alt: string
+    width: number
+    height: number
   }
 }[] {
   return [
@@ -126,24 +128,25 @@ export default function QAs(): {
       ),
     },
     {
-      q: <Trans>What's a bonding curve?</Trans>,
+      q: <Trans>What's a redemption rate?</Trans>,
       a: (
         <Trans>
           <p>
-            A bonding curve rewards people who wait longer to redeem your tokens
-            for overflow.
+            A redemption rate rewards people who wait longer to redeem your
+            tokens for overflow.
           </p>
           <p>
-            For example, with a bonding curve of 70%, redeeming 10% of the token
-            supply at any given time will claim around 7% of the total overflow.
+            For example, with a redemption rate of 70%, redeeming 10% of the
+            token supply at any given time will claim around 7% of the total
+            overflow.
           </p>
-          <p>The rest is left to share between token holders.</p>,
+          <p>The rest is left to share between token holders.</p>
           <p>
             For more info, check out this{' '}
             <ExternalLink href="https://youtu.be/dxqc3yMqi5M">
               short video
             </ExternalLink>{' '}
-            on bonding curves.
+            on redemption rate.
           </p>
         </Trans>
       ),
@@ -370,6 +373,8 @@ export default function QAs(): {
       img: {
         src: '/assets/cooler_if_you_did.png',
         alt: t`It'd be a lot cooler if you did`,
+        width: 500,
+        height: 274,
       },
     },
     {

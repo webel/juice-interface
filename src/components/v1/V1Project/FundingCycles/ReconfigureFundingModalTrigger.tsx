@@ -1,9 +1,9 @@
-import { Button, Tooltip } from 'antd'
+import { Trans } from '@lingui/macro'
+import { Button } from 'antd'
 import { V1ProjectContext } from 'contexts/v1/projectContext'
 import { useContext, useRef, useState } from 'react'
 import { Provider } from 'react-redux'
 import store, { createStore } from 'redux/store'
-import { Trans } from '@lingui/macro'
 
 import { BigNumber } from '@ethersproject/bignumber'
 
@@ -33,32 +33,18 @@ export default function ReconfigureFundingModalTrigger({
 
   return (
     <div style={{ textAlign: 'right' }}>
-      {fundingDuration?.gt(0) ? (
-        <Tooltip
-          title={
-            <span>
-              <b>Note:</b> The current funding cycle cannot be edited.
-            </span>
-          }
-        >
-          <Button
-            onClick={handleModalOpen}
-            size="small"
-            disabled={isPreviewMode}
-          >
-            <Trans>Reconfigure upcoming</Trans>
-          </Button>
-        </Tooltip>
-      ) : (
-        <Button onClick={handleModalOpen} size="small" disabled={isPreviewMode}>
+      <Button onClick={handleModalOpen} size="small" disabled={isPreviewMode}>
+        {fundingDuration?.gt(0) ? (
+          <Trans>Reconfigure upcoming</Trans>
+        ) : (
           <Trans>Reconfigure</Trans>
-        </Button>
-      )}
+        )}
+      </Button>
 
       {localStoreRef.current && (
         <Provider store={localStoreRef.current}>
           <ReconfigureFCModal
-            visible={reconfigureModalVisible}
+            open={reconfigureModalVisible}
             onDone={() => setReconfigureModalVisible(false)}
           />
         </Provider>

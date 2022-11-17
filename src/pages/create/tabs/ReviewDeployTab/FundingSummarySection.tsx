@@ -1,49 +1,48 @@
-import { Trans } from '@lingui/macro'
-import { Col, Row, Space } from 'antd'
 import { BigNumber } from '@ethersproject/bignumber'
 import { parseEther } from '@ethersproject/units'
+import { Trans } from '@lingui/macro'
+import { Col, Row, Space } from 'antd'
 
 import {
   useAppSelector,
-  useEditingV2FundAccessConstraintsSelector,
-  useEditingV2FundingCycleDataSelector,
-  useEditingV2FundingCycleMetadataSelector,
+  useEditingV2V3FundAccessConstraintsSelector,
+  useEditingV2V3FundingCycleDataSelector,
+  useEditingV2V3FundingCycleMetadataSelector,
 } from 'hooks/AppSelector'
-import { V2CurrencyOption } from 'models/v2/currencyOption'
-import { useContext } from 'react'
-import { formattedNum } from 'utils/formatNumber'
-import { V2CurrencyName } from 'utils/v2/currency'
+import { useWallet } from 'hooks/Wallet'
+import { V2V3CurrencyOption } from 'models/v2v3/currencyOption'
+import { formattedNum } from 'utils/format/formatNumber'
+import { V2V3CurrencyName } from 'utils/v2v3/currency'
 import {
   getDefaultFundAccessConstraint,
-  getUnsafeV2FundingCycleProperties,
-} from 'utils/v2/fundingCycle'
+  getUnsafeV2V3FundingCycleProperties,
+} from 'utils/v2v3/fundingCycle'
 import {
   formatIssuanceRate,
   formatReservedRate,
   MAX_DISTRIBUTION_LIMIT,
-  weightedAmount,
-} from 'utils/v2/math'
-import { NetworkContext } from 'contexts/networkContext'
+  weightAmountPermyriad,
+} from 'utils/v2v3/math'
 
-import { V2FundingCycle } from 'models/v2/fundingCycle'
 import Callout from 'components/Callout'
+import { V2V3FundingCycle } from 'models/v2v3/fundingCycle'
 
 import { rowGutter } from '.'
 
 import {
   AllowMintingStatistic,
+  AllowSetTerminalsStatistic,
   DiscountRateStatistic,
   DistributionLimitStatistic,
+  DistributionSplitsStatistic,
   DurationStatistic,
+  InflationRateStatistic,
   IssuanceRateStatistic,
   PausePayStatistic,
   ReconfigurationStatistic,
   RedemptionRateStatistic,
-  ReservedTokensStatistic,
-  DistributionSplitsStatistic,
   ReservedSplitsStatistic,
-  InflationRateStatistic,
-  AllowSetTerminalsStatistic,
+  ReservedTokensStatistic,
 } from './FundingAttributes'
 
 export default function FundingSummarySection() {
@@ -51,12 +50,12 @@ export default function FundingSummarySection() {
     state => state.editingV2Project,
   )
 
-  const { userAddress } = useContext(NetworkContext)
+  const { userAddress } = useWallet()
 
-  const fundingCycleData = useEditingV2FundingCycleDataSelector()
-  const fundAccessConstraints = useEditingV2FundAccessConstraintsSelector()
+  const fundingCycleData = useEditingV2V3FundingCycleDataSelector()
+  const fundAccessConstraints = useEditingV2V3FundAccessConstraintsSelector()
 
-  const fundingCycle: V2FundingCycle = {
+  const fundingCycle: V2V3FundingCycle = {
     ...fundingCycleData,
     number: BigNumber.from(1),
     configuration: BigNumber.from(0),
@@ -65,14 +64,14 @@ export default function FundingSummarySection() {
     metadata: BigNumber.from(0),
   }
 
-  const fundingCycleMetadata = useEditingV2FundingCycleMetadataSelector()
+  const fundingCycleMetadata = useEditingV2V3FundingCycleMetadataSelector()
 
   const fundAccessConstraint = getDefaultFundAccessConstraint(
     fundAccessConstraints,
   )
 
-  const currencyName = V2CurrencyName(
-    fundAccessConstraint?.distributionLimitCurrency.toNumber() as V2CurrencyOption,
+  const currencyName = V2V3CurrencyName(
+    fundAccessConstraint?.distributionLimitCurrency.toNumber() as V2V3CurrencyOption,
   )
 
   const distributionLimit =
@@ -81,8 +80,10 @@ export default function FundingSummarySection() {
     distributionLimit && !distributionLimit.gte(MAX_DISTRIBUTION_LIMIT),
   )
 
-  const unsafeFundingCycleProperties =
-    getUnsafeV2FundingCycleProperties(fundingCycle)
+  const unsafeFundingCycleProperties = getUnsafeV2V3FundingCycleProperties(
+    fundingCycle,
+    fundingCycleMetadata,
+  )
 
   const duration = fundingCycle.duration
   const hasDuration = duration?.gt(0)
@@ -90,7 +91,7 @@ export default function FundingSummarySection() {
   const initialIssuanceRate =
     formattedNum(
       formatIssuanceRate(
-        weightedAmount(
+        weightAmountPermyriad(
           fundingCycle?.weight,
           fundingCycleMetadata?.reservedRate.toNumber(),
           parseEther('1'),
@@ -106,7 +107,7 @@ export default function FundingSummarySection() {
   const reservedRate =
     formattedNum(
       formatIssuanceRate(
-        weightedAmount(
+        weightAmountPermyriad(
           fundingCycle?.weight,
           fundingCycleMetadata?.reservedRate.toNumber(),
           parseEther('1'),
@@ -116,11 +117,11 @@ export default function FundingSummarySection() {
     ) ?? '0'
 
   return (
-    <div>
-      <h2>
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <h2 style={{ margin: 0 }}>
         <Trans>Funding cycle details</Trans>
       </h2>
-      <Callout style={{ marginBottom: 15 }}>
+      <Callout>
         {hasDuration ? (
           <Trans>
             Once launched, your first funding cycle{' '}
@@ -130,8 +131,8 @@ export default function FundingSummarySection() {
           </Trans>
         ) : (
           <Trans>
-            Since you have not set a funding duration, changes to these settings
-            will be applied immediately.
+            Since you have not set a funding duration, future changes to these
+            settings will be applied immediately.
           </Trans>
         )}
       </Callout>
@@ -198,9 +199,7 @@ export default function FundingSummarySection() {
             />
           </Col>
           <Col md={8} xs={24}>
-            {hasDuration && (
-              <ReconfigurationStatistic ballotAddress={fundingCycle.ballot} />
-            )}
+            <ReconfigurationStatistic ballotAddress={fundingCycle.ballot} />
           </Col>
         </Row>
         <Row gutter={rowGutter} style={{ width: '100%' }}>
@@ -230,6 +229,6 @@ export default function FundingSummarySection() {
           )}
         </Row>
       </Space>
-    </div>
+    </Space>
   )
 }

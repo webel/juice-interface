@@ -2,10 +2,10 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { Progress, Tooltip } from 'antd'
 import { Property } from 'csstype'
 
+import { t } from '@lingui/macro'
 import { ThemeContext } from 'contexts/themeContext'
 import { useContext, useMemo, useState } from 'react'
-import { fracDiv } from 'utils/formatNumber'
-import { t } from '@lingui/macro'
+import { fracDiv } from 'utils/format/formatNumber'
 
 const TargetIndicatorLine = (
   props: { color: Property.Color } & React.DOMAttributes<HTMLDivElement>,
@@ -42,7 +42,7 @@ const ProgressWithOverflow = ({
     >
       <Tooltip
         title={t`Distributed`}
-        visible={showTooltips}
+        open={showTooltips}
         placement="bottomLeft"
       >
         <Progress
@@ -58,7 +58,7 @@ const ProgressWithOverflow = ({
 
       <TargetIndicatorLine color={colors.text.primary} />
 
-      <Tooltip title={t`Overflow`} visible={showTooltips} placement="topRight">
+      <Tooltip title={t`Overflow`} open={showTooltips} placement="topRight">
         <Progress
           style={{
             width: percentOverflow * 100 + '%',

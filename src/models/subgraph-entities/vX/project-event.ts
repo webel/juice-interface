@@ -9,7 +9,8 @@ import {
   TapEventJson,
 } from 'models/subgraph-entities/v1/tap-event'
 
-import { CV } from '../../cv'
+import { PV } from '../../pv'
+import { TerminalEventEntity } from '../base/terminal-event'
 import {
   DistributeToPayoutModEvent,
   DistributeToPayoutModEventJson,
@@ -50,6 +51,11 @@ import {
   UseAllowanceEventJson,
 } from '../v2/use-allowance-event'
 import {
+  AddToBalanceEvent,
+  AddToBalanceEventJson,
+  parseAddToBalanceEventJson,
+} from './add-to-balance-event'
+import {
   DeployedERC20Event,
   DeployedERC20EventJson,
   parseDeployedERC20EventJson,
@@ -71,15 +77,17 @@ import {
   RedeemEventJson,
 } from './redeem-event'
 
-export type ProjectEvent = {
+export interface ProjectEvent extends TerminalEventEntity {
   id: string
   timestamp: number
   project: string
   projectId: number
-  cv: CV
+  pv: PV
+  terminal: string
 
   // V1 & V2
   payEvent: Partial<PayEvent> | null
+  addToBalanceEvent: Partial<AddToBalanceEvent> | null
   mintTokensEvent: Partial<MintTokensEvent> | null
   redeemEvent: Partial<RedeemEvent> | null
   deployedERC20Event: Partial<DeployedERC20Event> | null
@@ -104,8 +112,10 @@ export type ProjectEventJson = Pick<
   ProjectEvent,
   'id' | 'timestamp' | 'projectId' | 'project' // primitive types
 > & {
-  cv: CV
+  pv: PV
+  terminal: string
   payEvent: PayEventJson | null
+  addToBalanceEvent: AddToBalanceEventJson | null
   mintTokensEvent: MintTokensEventJson | null
   redeemEvent: RedeemEventJson | null
   deployedERC20Event: DeployedERC20EventJson | null
@@ -127,6 +137,9 @@ export type ProjectEventJson = Pick<
 export const parseProjectEventJson = (j: ProjectEventJson): ProjectEvent => ({
   ...j,
   payEvent: j.payEvent ? parsePayEventJson(j.payEvent) : null,
+  addToBalanceEvent: j.addToBalanceEvent
+    ? parseAddToBalanceEventJson(j.addToBalanceEvent)
+    : null,
   mintTokensEvent: j.mintTokensEvent
     ? parseMintTokensEventJson(j.mintTokensEvent)
     : null,

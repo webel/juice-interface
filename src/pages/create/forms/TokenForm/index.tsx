@@ -1,11 +1,11 @@
 import { Trans } from '@lingui/macro'
 import { Button, Form, Space } from 'antd'
+import { ItemNoInput } from 'components/formItems/ItemNoInput'
 import { ThemeContext } from 'contexts/themeContext'
 import { useAppDispatch } from 'hooks/AppDispatch'
 import { useAppSelector } from 'hooks/AppSelector'
+import round from 'lodash/round'
 import ReservedTokensFormItem from 'pages/create/forms/TokenForm/ReservedTokensFormItem'
-import { round } from 'lodash'
-import { ItemNoInput } from 'components/formItems/ItemNoInput'
 
 import {
   CSSProperties,
@@ -21,9 +21,9 @@ import {
   editingV2ProjectActions,
 } from 'redux/slices/editingV2Project'
 
-import { sanitizeSplit } from 'utils/v2/splits'
+import { sanitizeSplit } from 'utils/splits'
 
-import { Split } from 'models/v2/splits'
+import { Split } from 'models/splits'
 
 import {
   DEFAULT_MINT_RATE,
@@ -35,7 +35,7 @@ import {
   issuanceRateFrom,
   redemptionRateFrom,
   reservedRateFrom,
-} from 'utils/v2/math'
+} from 'utils/v2v3/math'
 
 import { BigNumber } from '@ethersproject/bignumber'
 
@@ -45,22 +45,22 @@ import {
   getDefaultFundAccessConstraint,
   hasDistributionLimit,
   hasFundingDuration,
-} from 'utils/v2/fundingCycle'
+} from 'utils/v2v3/fundingCycle'
 
-import { SerializedV2FundAccessConstraint } from 'utils/v2/serializers'
+import { SerializedV2V3FundAccessConstraint } from 'utils/v2v3/serializers'
 
 import SwitchHeading from 'components/SwitchHeading'
 
 import NumberSlider from 'components/inputs/NumberSlider'
 
-import FormItemWarningText from 'components/FormItemWarningText'
-import { formattedNum } from 'utils/formatNumber'
 import { DEFAULT_BONDING_CURVE_RATE_PERCENTAGE } from 'components/formItems/ProjectRedemptionRate'
+import FormItemWarningText from 'components/FormItemWarningText'
+import { formattedNum } from 'utils/format/formatNumber'
 
-import { DISCOUNT_RATE_EXPLANATION } from 'components/v2/V2Project/V2FundingCycleSection/settingExplanations'
-import { getTotalSplitsPercentage } from 'utils/v2/distributions'
 import { useForm } from 'antd/lib/form/Form'
 import Callout from 'components/Callout'
+import { DISCOUNT_RATE_EXPLANATION } from 'components/v2v3/V2V3Project/V2V3FundingCycleSection/settingExplanations'
+import { getTotalSplitsPercentage } from 'utils/v2v3/distributions'
 
 import { shadowCard } from 'constants/styles/shadowCard'
 import MintRateFormItem from './MintRateFormItem'
@@ -94,7 +94,7 @@ function DiscountRateExtra({
   )
 
   return (
-    <div style={{ fontSize: '0.9rem' }}>
+    <div style={{ fontSize: '0.875rem' }}>
       {!hasDuration && (
         <FormItemWarningText>
           <Trans>
@@ -161,7 +161,7 @@ export default function TokenForm({
     fundAccessConstraints,
   } = useAppSelector(state => state.editingV2Project)
   const fundAccessConstraint =
-    getDefaultFundAccessConstraint<SerializedV2FundAccessConstraint>(
+    getDefaultFundAccessConstraint<SerializedV2V3FundAccessConstraint>(
       fundAccessConstraints,
     )
 

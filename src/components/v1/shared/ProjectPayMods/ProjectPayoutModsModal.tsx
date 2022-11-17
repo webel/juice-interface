@@ -10,9 +10,8 @@ import {
   validatePercentage,
 } from 'components/formItems/formHelpers'
 import InputAccessoryButton from 'components/InputAccessoryButton'
-import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
-import NumberSlider from 'components/inputs/NumberSlider'
 import { EthAddressInput } from 'components/inputs/EthAddressInput'
+import NumberSlider from 'components/inputs/NumberSlider'
 
 import { ThemeContext } from 'contexts/themeContext'
 import { isAddress } from 'ethers/lib/utils'
@@ -24,8 +23,8 @@ import {
   percentToPerbicent,
   percentToPermyriad,
   permyriadToPercent,
-} from 'utils/formatNumber'
-import { amountSubFee } from 'utils/math'
+} from 'utils/format/formatNumber'
+import { amountSubFee } from 'utils/v1/math'
 import { getAmountFromPercent, getPercentFromAmount } from 'utils/v1/payouts'
 
 import * as constants from '@ethersproject/constants'
@@ -37,6 +36,7 @@ import { useForm } from 'antd/lib/form/Form'
 
 import { CurrencyName } from 'constants/currency'
 
+import FormattedNumberInput from 'components/inputs/FormattedNumberInput'
 import { EditingPayoutMod } from './types'
 
 type ModType = 'project' | 'address'
@@ -51,7 +51,7 @@ type ProjectPayoutModsForm = {
 }
 
 export const ProjectPayoutModsModal = ({
-  visible,
+  open,
   mods,
   editingModIndex,
   target,
@@ -61,7 +61,7 @@ export const ProjectPayoutModsModal = ({
   onOk,
   onCancel,
 }: {
-  visible: boolean
+  open: boolean
   mods: PayoutMod[]
   target: string
   editingModIndex: number | undefined
@@ -194,7 +194,7 @@ export const ProjectPayoutModsModal = ({
   return (
     <Modal
       title={modalMode === 'Edit' ? t`Edit payout` : t`Add new payout`}
-      visible={visible}
+      open={open}
       onOk={validateAndSave}
       okText={modalMode === 'Edit' ? t`Save payout` : t`Add payout`}
       onCancel={discardAndClose}
@@ -294,6 +294,7 @@ export const ProjectPayoutModsModal = ({
                 </div>
               ) : null
             }
+            rules={[{ validator: validatePayout }]}
           >
             <div
               style={{
@@ -306,9 +307,6 @@ export const ProjectPayoutModsModal = ({
                 value={form.getFieldValue('amount')}
                 placeholder={'0'}
                 onChange={amount => onAmountChange(parseFloat(amount || '0'))}
-                formItemProps={{
-                  rules: [{ validator: validatePayout }],
-                }}
                 accessory={<InputAccessoryButton content={currencyName} />}
               />
             </div>

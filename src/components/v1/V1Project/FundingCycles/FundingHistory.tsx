@@ -12,9 +12,9 @@ import { V1ContractName } from 'models/v1/contracts'
 import { V1CurrencyOption } from 'models/v1/currencyOption'
 import { V1FundingCycle } from 'models/v1/fundingCycle'
 import { useCallback, useContext, useState } from 'react'
+import { formatHistoricalDate } from 'utils/format/formatDate'
+import { formatWad } from 'utils/format/formatNumber'
 import { deepEqFundingCycles } from 'utils/v1/deepEqFundingCycles'
-import { formatHistoricalDate } from 'utils/formatDate'
-import { formatWad } from 'utils/formatNumber'
 import { hasFundingTarget } from 'utils/v1/fundingCycle'
 
 import FundingCycleDetails from 'components/v1/shared/FundingCycle/FundingCycleDetails'
@@ -139,7 +139,7 @@ export default function FundingHistory({
 
       {selectedFC && (
         <Modal
-          visible={!!selectedFC}
+          open={!!selectedFC}
           width={600}
           title={`Cycle #${selectedFC.number.toString()}`}
           onCancel={() => setSelectedIndex(undefined)}
